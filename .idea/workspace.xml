@@ -110,8 +110,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/org/aotu/publics/module/publicModule.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-40">
-              <caret line="1618" column="14" lean-forward="true" selection-start-line="1618" selection-start-column="14" selection-end-line="1618" selection-end-column="14" />
+            <state relative-caret-position="169">
+              <caret line="1629" column="18" lean-forward="true" selection-start-line="1629" selection-start-column="18" selection-end-line="1629" selection-end-column="18" />
             </state>
           </provider>
         </entry>
@@ -261,23 +261,6 @@
               <item name="src" type="462c0819:PsiDirectoryNode" />
               <item name="org" type="462c0819:PsiDirectoryNode" />
               <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="kuixiu" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="kuixiu" type="462c0819:PsiDirectoryNode" />
-              <item name="module" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
               <item name="lswx" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -390,7 +373,7 @@
     <property name="SearchEverywhereHistoryKey" value="CardXxy&#9;PSI&#9;JAVA://org.aotu.VIPcard.module.card#CardXxy&#10;getVipCardByCardNo&#9;PSI&#9;JAVA://org.aotu.VIPcard.module.card#getVipCardByCardNo&#10;pom.xml&#9;FILE&#9;jar://E:/IdeaProjects/BSD-PDA/WebContent/WEB-INF/lib/commons-collections-3.2.1.jar!/META-INF/maven/commons-collections/commons-collections/pom.xml&#10;SELECT * FROM sm_peijcx_new&#9;null&#9;null" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1539856028159" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1539856036297" />
     <property name="last_opened_file_path" value="F:/android资料/dimens_sw-master" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
@@ -553,12 +536,12 @@
       <workItem from="1539586288099" duration="7353000" />
       <workItem from="1539651037294" duration="2973000" />
       <workItem from="1539664473393" duration="1552000" />
-      <workItem from="1539846760582" duration="1794000" />
+      <workItem from="1539846760582" duration="2425000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="192838000" />
+    <option name="totallyTimeSpent" value="193469000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -570,10 +553,10 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1056" extended-state="7" />
+    <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.14285715" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.14285715" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Designer" order="2" />
       <window_info id="Image Layers" order="3" />
@@ -584,7 +567,7 @@
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32925472" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.37041157" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.37486094" />
+      <window_info anchor="bottom" id="Debug" order="3" visible="true" weight="0.37486094" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32925472" />
@@ -979,8 +962,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/aotu/publics/module/publicModule.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-40">
-          <caret line="1618" column="14" lean-forward="true" selection-start-line="1618" selection-start-column="14" selection-end-line="1618" selection-end-column="14" />
+        <state relative-caret-position="169">
+          <caret line="1629" column="18" lean-forward="true" selection-start-line="1629" selection-start-column="18" selection-end-line="1629" selection-end-column="18" />
         </state>
       </provider>
     </entry>
