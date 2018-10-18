@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="conf"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
+	<classpathentry exported="true" kind="lib" path="WebContent/WEB-INF/lib/nutz-1.r.59.jar"/>
+	<classpathentry exported="true" kind="lib" path="WebContent/WEB-INF/lib/commons-codec-1.4.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/httpcore-4.4.1.jar" sourcepath="WebContent/WEB-INF/lib/httpcore-4.4.1.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/javax.servlet-api-3.1.0.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="output" path="build/classes"/>
+</classpath>
