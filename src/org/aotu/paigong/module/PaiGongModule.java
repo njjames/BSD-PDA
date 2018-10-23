@@ -110,71 +110,57 @@ public class PaiGongModule {
 	int jg;
 
 	/**
-	 * @param work_no
-	 *           维修单号
+	 * @param work_no 维修单号
 	 * @return
 	 */
 	@At
 	@Ok("raw:json")
 	public String wangGong(final String work_no) {
-		//@author LHW  @time 2017年9月7日08:45:22修改  删除判断条件
-		//Work_pz_gzEntity pz = dao.fetch(Work_pz_gzEntity.class, work_no);
-		//if (pz.getMainstate() > 0) {
-		//	return jsons.json(1, 1, 0, "已完工，不能再次完工");
-		//} else {
-		//没有判断work_no
-			Sql sql1 = Sqls
-					.queryRecord("select count(*) as cnt  from work_ckpz_gz where work_no= '"
-							+ work_no + "'");
-			dao.execute(sql1);
-			List<Record> res1 = sql1.getList(Record.class);
-			int cnt = res1.get(0).getInt("cnt");
-			if (cnt > 0)
-				return jsons.json(1, 1, 0, "不能完工，有未出库的用料");
-			Sql sql2 = Sqls
-					.queryRecord("select count(*) as cnt  from work_ll_gz where isnull(flag_chuku,0)=0 and isnull(flag_xz,0)=0 and work_no= '"
-							+ work_no + "'");
-			dao.execute(sql2);
-			List<Record> res2 = sql2.getList(Record.class);
-			cnt = res2.get(0).getInt("cnt");
-			if (cnt > 0)
-				return jsons.json(1, 1, 0, "不能完工，有未领料配件");
-			dao.run(new ConnCallback() {
-				@Override
-				public void invoke(java.sql.Connection conn) throws Exception {
-					System.out
-							.println("select card_no from work_pz_gz where work_no = '"
-									+ work_no + "'");
-					Sql sql3 = Sqls
-							.queryRecord("select card_no from work_pz_gz where work_no = '"
-									+ work_no + "'");
-					dao.execute(sql3);
-					List<Record> res3 = sql3.getList(Record.class);
-					String itemrate = "1";
-					String peijrate = "1";
-					if (res3 != null && !res3.equals("") && res3.size() > 0) {
-						String card_no = res3.get(0).getString("card_no");
-						Sql sql4 = Sqls
-								.queryRecord("select itemrate,peijrate from cardkind  where cardkind = (select card_kind  from kehu_card where card_no = '"
-										+ card_no + "' ) ");
-						dao.execute(sql4);
-						List<Record> res4 = sql4.getList(Record.class);
-						if (res4.size() > 0) {
-							itemrate = res4.get(0).getString("itemrate");
-							peijrate = res4.get(0).getString("peijrate");
-						}
-					}
-					System.out.println("=itemrate================="+itemrate);
-					System.out.println("=peijrate================="+peijrate);
-					CallableStatement cs = conn
-							.prepareCall("{call Wx_PaiGong (?,?,?)}");
-					cs.setString(1, work_no);
-					cs.setString(2, itemrate);
-					cs.setString(3, peijrate);
-					cs.execute();
-				}
-			});
-			return jsons.json(1, 1, 1, "成功");
+        Sql sql1 = Sqls
+                .queryRecord("select count(*) as cnt  from work_ckpz_gz where work_no= '" + work_no + "'");
+        dao.execute(sql1);
+        List<Record> res1 = sql1.getList(Record.class);
+        int cnt = res1.get(0).getInt("cnt");
+        if (cnt > 0)
+            return jsons.json(1, 1, 0, "不能完工，有未出库的用料");
+        Sql sql2 = Sqls
+                .queryRecord("select count(*) as cnt  from work_ll_gz where isnull(flag_chuku,0)=0 and isnull(flag_xz,0)=0 and work_no= '"
+                        + work_no + "'");
+        dao.execute(sql2);
+        List<Record> res2 = sql2.getList(Record.class);
+        cnt = res2.get(0).getInt("cnt");
+        if (cnt > 0)
+            return jsons.json(1, 1, 0, "不能完工，有未领料配件");
+        dao.run(new ConnCallback() {
+            @Override
+            public void invoke(java.sql.Connection conn) throws Exception {
+                Sql sql3 = Sqls
+                        .queryRecord("select card_no from work_pz_gz where work_no = '" + work_no + "'");
+                dao.execute(sql3);
+                List<Record> res3 = sql3.getList(Record.class);
+                String itemrate = "1";
+                String peijrate = "1";
+                if (res3 != null && !res3.equals("") && res3.size() > 0) {
+                    String card_no = res3.get(0).getString("card_no");
+                    Sql sql4 = Sqls
+                            .queryRecord("select itemrate,peijrate from cardkind  where cardkind = (select card_kind  from kehu_card where card_no = '"
+                                    + card_no + "' ) ");
+                    dao.execute(sql4);
+                    List<Record> res4 = sql4.getList(Record.class);
+                    if (res4.size() > 0) {
+                        itemrate = res4.get(0).getString("itemrate");
+                        peijrate = res4.get(0).getString("peijrate");
+                    }
+                }
+                CallableStatement cs = conn
+                        .prepareCall("{call Wx_PaiGong (?,?,?)}");
+                cs.setString(1, work_no);
+                cs.setString(2, itemrate);
+                cs.setString(3, peijrate);
+                cs.execute();
+            }
+        });
+        return jsons.json(1, 1, 1, "成功");
 	}
 
 	/**
@@ -501,13 +487,12 @@ public class PaiGongModule {
 
 	/**
 	 * @param jg
-	 * @param gs     会员原工时
 	 * @param hyzk   会员折扣
 	 * @return
 	 */
 	@At
 	@Ok("raw:json")
-	public String editWxxmByhyzk(String work_no, String wxxm_no, double jg, double gs, double hyzk, String wxxm_mc) {
+	public String editWxxmByhyzk(String work_no, String wxxm_no, double jg, double hyzk) {
         Sql sql1 = Sqls
                 .queryRecord("update work_mx_gz set wxxm_yje=" + jg + ",wxxm_je=" + jg*hyzk + " where work_no='" + work_no + "' and wxxm_no='" + wxxm_no + "'");
         dao.execute(sql1);
