@@ -485,18 +485,31 @@ public class PaiGongModule {
         return jsons.json(1, 1, 1, "删除成功");
     }
 
-	/**
-	 * @param jg
-	 * @param hyzk   会员折扣
-	 * @return
-	 */
+    /**
+     *
+     * @param work_no
+     * @param wxxm_no
+     * @param jg         原工时费
+     * @param hyzk       会员折扣
+     * @return
+     */
 	@At
 	@Ok("raw:json")
 	public String editWxxmByhyzk(String work_no, String wxxm_no, double jg, double hyzk) {
-        Sql sql1 = Sqls
-                .queryRecord("update work_mx_gz set wxxm_yje=" + jg + ",wxxm_je=" + jg*hyzk + " where work_no='" + work_no + "' and wxxm_no='" + wxxm_no + "'");
-        dao.execute(sql1);
-		return jsons.json(1, 1, 1, "修改成功");
+        Work_mx_gzEntity entity = dao.fetch(Work_mx_gzEntity.class, Cnd.where("work_no", "=", work_no).and("wxxm_no", "=", wxxm_no));
+        if (entity != null) {
+            Sql sql1 = null;
+            if (entity.getWxxm_gs() == 0) {
+                sql1 = Sqls
+                        .create("update work_mx_gz set wxxm_yje=" + jg + ",wxxm_je=" + jg*hyzk + ",wxxm_dj=" + jg + " where work_no='" + work_no + "' and wxxm_no='" + wxxm_no + "'");
+            } else {
+                sql1 = Sqls
+                        .create("update work_mx_gz set wxxm_yje=" + jg + ",wxxm_je=" + jg*hyzk + ",wxxm_dj=" + jg*hyzk + "/wxxm_gs where work_no='" + work_no + "' and wxxm_no='" + wxxm_no + "'");
+            }
+            dao.execute(sql1);
+            return jsons.json(1, 1, 1, "修改成功");
+        }
+        return jsons.json(1, 0, 0, "修改失败");
 	}
 	
 	/**
