@@ -190,19 +190,20 @@ public class ordersModule {
 
 	/**
 	 * 历史接单
-	 * 
-	 * @param pai
+	 *
 	 * @return
 	 */
 	@At
 	@Ok("raw:json")
 	public String lsjd(int pageNumber, String kehu_mc, String che_no) {
 		//新加cx，vin2017年10月12日14:53:08
-		StringBuffer _sql = new StringBuffer("select a.*,k.kehu_mc,b.che_baoyanglicheng,b.che_bs,b.che_ccrq,b.che_gcrq,k.kehu_dh,b.che_cx,b.che_vin  from work_pz_sj  a left join work_cheliang_sm b on a.che_no=b.che_no left join kehu k on a.kehu_no = k.kehu_no  where  a.flag_fast=0  and   a.mainstate>=-1 and  a.mainstate<=4 ");
-		if (che_no != null && che_no.length()>0)
-			_sql.append(" and a.che_no like '%"+che_no+"%'");
-		if (kehu_mc != null && kehu_mc.length()>0)
-			_sql.append(" and kehu_mc like '%"+kehu_mc+"%'");
+        StringBuilder _sql = new StringBuilder("select a.*,k.kehu_mc,b.che_baoyanglicheng,b.che_bs,b.che_ccrq,b.che_gcrq,k.kehu_dh,b.che_cx,b.che_vin  from work_pz_sj  a left join work_cheliang_sm b on a.che_no=b.che_no left join kehu k on a.kehu_no = k.kehu_no  where  a.flag_fast=0  and   a.mainstate>=-1 and  a.mainstate<=4 ");
+		if (che_no != null && che_no.length() > 0) {
+			_sql.append(" and a.che_no like '%" + che_no + "%'");
+		}
+        if (kehu_mc != null && kehu_mc.length() > 0) {
+            _sql.append(" and kehu_mc like '%" + kehu_mc + "%'");
+        }
 		_sql.append(" order by id desc ");
 		Sql sql = Sqls.queryRecord(_sql.toString());
 		dao.execute(sql);

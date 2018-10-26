@@ -19,12 +19,12 @@
     <session id="-768783904">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="53" />
+          <entry key="project.closed" value="55" />
           <entry key="project.open.time.12" value="1" />
           <entry key="project.open.time.123" value="1" />
           <entry key="project.open.time.14" value="1" />
           <entry key="project.open.time.15" value="1" />
-          <entry key="project.open.time.16" value="3" />
+          <entry key="project.open.time.16" value="4" />
           <entry key="project.open.time.17" value="3" />
           <entry key="project.open.time.18" value="3" />
           <entry key="project.open.time.19" value="4" />
@@ -32,8 +32,8 @@
           <entry key="project.open.time.21" value="2" />
           <entry key="project.open.time.22" value="5" />
           <entry key="project.open.time.23" value="6" />
-          <entry key="project.open.time.24" value="2" />
-          <entry key="project.open.time.25" value="3" />
+          <entry key="project.open.time.24" value="3" />
+          <entry key="project.open.time.25" value="4" />
           <entry key="project.open.time.26" value="2" />
           <entry key="project.open.time.28" value="2" />
           <entry key="project.open.time.3" value="2" />
@@ -46,13 +46,13 @@
           <entry key="project.open.time.5" value="1" />
           <entry key="project.open.time.6" value="1" />
           <entry key="project.open.time.7" value="1" />
-          <entry key="project.opened" value="58" />
+          <entry key="project.opened" value="61" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="class" value="6" />
-          <entry key="java" value="90" />
+          <entry key="java" value="91" />
           <entry key="js" value="7" />
           <entry key="jsp" value="1" />
           <entry key="properties" value="17" />
@@ -62,7 +62,7 @@
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="CLASS" value="6" />
-          <entry key="JAVA" value="90" />
+          <entry key="JAVA" value="91" />
           <entry key="JSP" value="1" />
           <entry key="JavaScript" value="7" />
           <entry key="Properties" value="17" />
@@ -72,14 +72,14 @@
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="dummy" value="1" />
-          <entry key="java" value="5394" />
+          <entry key="java" value="5404" />
           <entry key="properties" value="19" />
           <entry key="xml" value="4" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="JAVA" value="5394" />
+          <entry key="JAVA" value="5404" />
           <entry key="PLAIN_TEXT" value="1" />
           <entry key="Properties" value="19" />
           <entry key="XML" value="4" />
@@ -88,12 +88,21 @@
     </session>
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file pinned="false" current-in-tab="true">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/aotu/paigong/module/PaiGongModule.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="206">
-              <caret line="489" column="21" lean-forward="true" selection-start-line="489" selection-start-column="21" selection-end-line="489" selection-end-column="21" />
+            <state relative-caret-position="263">
+              <caret line="492" column="29" selection-start-line="492" selection-start-column="29" selection-end-line="492" selection-end-column="29" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/org/aotu/order/module/ordersModule.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="419">
+              <caret line="210" column="58" lean-forward="true" selection-start-line="210" selection-start-column="58" selection-end-line="210" selection-end-column="58" />
             </state>
           </provider>
         </entry>
@@ -101,8 +110,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="303">
-              <caret line="89" lean-forward="true" selection-start-line="89" selection-end-line="89" />
+            <state relative-caret-position="1691">
+              <caret line="89" selection-start-line="89" selection-end-line="89" />
             </state>
           </provider>
         </entry>
@@ -135,7 +144,6 @@
         <option value="$PROJECT_DIR$/src/org/aotu/util/MyUtils.java" />
         <option value="$PROJECT_DIR$/src/org/aotu/util/Test.java" />
         <option value="$PROJECT_DIR$/src/org/aotu/lswx/module/lswxModule.java" />
-        <option value="$PROJECT_DIR$/src/org/aotu/order/module/ordersModule.java" />
         <option value="$PROJECT_DIR$/src/org/aotu/kuixiu/module/KuaixiuModule.java" />
         <option value="$PROJECT_DIR$/src/org/aotu/util/BsdUtils.java" />
         <option value="$PROJECT_DIR$/src/org/aotu/offer/entity/baoJiaEntity.java" />
@@ -143,6 +151,7 @@
         <option value="$PROJECT_DIR$/src/org/aotu/publics/module/publicModule.java" />
         <option value="$PROJECT_DIR$/src/org/aotu/VIPcard/module/card.java" />
         <option value="$PROJECT_DIR$/src/org/aotu/paigong/module/PaiGongModule.java" />
+        <option value="$PROJECT_DIR$/src/org/aotu/order/module/ordersModule.java" />
       </list>
     </option>
   </component>
@@ -209,7 +218,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="AndroidView" />
       <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
@@ -247,6 +255,23 @@
               <item name="src" type="462c0819:PsiDirectoryNode" />
               <item name="org" type="462c0819:PsiDirectoryNode" />
               <item name="aotu" type="462c0819:PsiDirectoryNode" />
+              <item name="order" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
+              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="org" type="462c0819:PsiDirectoryNode" />
+              <item name="aotu" type="462c0819:PsiDirectoryNode" />
+              <item name="order" type="462c0819:PsiDirectoryNode" />
+              <item name="module" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
+              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="org" type="462c0819:PsiDirectoryNode" />
+              <item name="aotu" type="462c0819:PsiDirectoryNode" />
               <item name="paigong" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -263,6 +288,7 @@
         </subPane>
       </pane>
       <pane id="PackagesPane" />
+      <pane id="AndroidView" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -273,7 +299,7 @@
     <property name="SearchEverywhereHistoryKey" value="CardXxy&#9;PSI&#9;JAVA://org.aotu.VIPcard.module.card#CardXxy&#10;getVipCardByCardNo&#9;PSI&#9;JAVA://org.aotu.VIPcard.module.card#getVipCardByCardNo&#10;pom.xml&#9;FILE&#9;jar://E:/IdeaProjects/BSD-PDA/WebContent/WEB-INF/lib/commons-collections-3.2.1.jar!/META-INF/maven/commons-collections/commons-collections/pom.xml&#10;SELECT * FROM sm_peijcx_new&#9;null&#9;null" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1540291056926" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1540541763742" />
     <property name="last_opened_file_path" value="F:/android资料/dimens_sw-master" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
@@ -372,7 +398,7 @@
     </configuration>
   </component>
   <component name="SvnConfiguration" cleanupOnStartRun="true">
-    <configuration>C:\Users\nj\AppData\Roaming\Subversion</configuration>
+    <configuration>C:\Users\Administrator\AppData\Roaming\Subversion</configuration>
     <supportedVersion>125</supportedVersion>
   </component>
   <component name="TaskManager">
@@ -440,11 +466,14 @@
       <workItem from="1539920783075" duration="627000" />
       <workItem from="1540262822983" duration="3635000" />
       <workItem from="1540287567723" duration="2260000" />
+      <workItem from="1540433187660" duration="643000" />
+      <workItem from="1540464585446" duration="697000" />
+      <workItem from="1540523417181" duration="2135000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="200929000" />
+    <option name="totallyTimeSpent" value="204404000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -457,8 +486,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.25" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.15565032" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Designer" order="2" />
       <window_info id="Image Layers" order="3" />
@@ -469,7 +499,7 @@
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32925472" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.37041157" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.3070078" />
+      <window_info anchor="bottom" id="Debug" order="3" visible="true" weight="0.3070078" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32925472" />
@@ -675,13 +705,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/aotu/order/module/ordersModule.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="18335">
-          <caret line="999" column="20" selection-start-line="999" selection-start-column="20" selection-end-line="1007" selection-end-column="21" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/org/aotu/login/module/loginModule.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="494">
@@ -822,17 +845,24 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
+    <entry file="file://$PROJECT_DIR$/src/org/aotu/paigong/module/PaiGongModule.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="303">
-          <caret line="89" lean-forward="true" selection-start-line="89" selection-end-line="89" />
+        <state relative-caret-position="263">
+          <caret line="492" column="29" selection-start-line="492" selection-start-column="29" selection-end-line="492" selection-end-column="29" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/aotu/paigong/module/PaiGongModule.java">
+    <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="206">
-          <caret line="489" column="21" lean-forward="true" selection-start-line="489" selection-start-column="21" selection-end-line="489" selection-end-column="21" />
+        <state relative-caret-position="1691">
+          <caret line="89" selection-start-line="89" selection-end-line="89" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/aotu/order/module/ordersModule.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="419">
+          <caret line="210" column="58" lean-forward="true" selection-start-line="210" selection-start-column="58" selection-end-line="210" selection-end-column="58" />
         </state>
       </provider>
     </entry>
