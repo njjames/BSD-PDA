@@ -471,7 +471,7 @@ public class PaiGongModule {
 	@Ok("raw:json")
 	public String editYl_mrkx(String work_no, String peij_no, double sl, double zk) {
         Sql sql1 = Sqls
-                .queryRecord("update work_ll_gz set peij_sl=" + sl + ",peij_dj=peij_ydj*" + zk + ",peij_je=peij_ydj*" + sl*zk + ",peij_yje=peij_ydj*" + sl + " where work_no='" + work_no + "' and peij_no='" + peij_no + "'");
+                .create("update work_ll_gz set peij_sl=" + sl + ",peij_dj=peij_ydj*" + zk + ",peij_je=peij_ydj*" + sl*zk + ",peij_yje=peij_ydj*" + sl + " where work_no='" + work_no + "' and peij_no='" + peij_no + "'");
         dao.execute(sql1);
 		return jsons.json(1, 1, 1, "删除成功");
 	}
@@ -480,7 +480,7 @@ public class PaiGongModule {
     @Ok("raw:json")
     public String updatePeijYdj(String work_no, String peij_no, double ydj, double zk) {
         Sql sql1 = Sqls
-                .queryRecord("update work_ll_gz set peij_ydj=" + ydj + ",peij_yje=peij_sl*" + ydj + ",peij_dj=" + ydj*zk + ",peij_je=peij_sl*" + ydj*zk + " where work_no='" + work_no + "' and peij_no='" + peij_no + "'");
+                .create("update work_ll_gz set peij_ydj=" + ydj + ",peij_yje=peij_sl*" + ydj + ",peij_dj=" + ydj*zk + ",peij_je=peij_sl*" + ydj*zk + " where work_no='" + work_no + "' and peij_no='" + peij_no + "'");
         dao.execute(sql1);
         return jsons.json(1, 1, 1, "删除成功");
     }

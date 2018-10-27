@@ -99,93 +99,86 @@ public class ordersModule {
 	
 	/**
 	 * 基本信息
-	 * 
-	 * @param pai
 	 * @return
 	 */
 	@At
 	@Ok("raw:json")
-	public String jbxx(String pai, String gongsiNo, String caozuoyuan_xm) {
-		//pai = new String(pai .getBytes("iso8859-1"),"utf-8");
-		java.util.Calendar rightNow = java.util.Calendar.getInstance();
-		java.text.SimpleDateFormat sim = new java.text.SimpleDateFormat(
-				"yyyy-MM-dd HH:mm:ss");
-		// 如果是后退几天，就写 -天数 例如：
-		rightNow.add(java.util.Calendar.DAY_OF_MONTH, -20);
-		// 进行时间转换
-		String date = sim.format(rightNow.getTime());
-		List<Work_pz_gzEntity> result = dao.query(
-				Work_pz_gzEntity.class,
-				Cnd.where("che_no", "=", pai).and("xche_jdrq", ">", date)
-						.and("flag_fast", "=", 0).and("mainstate", "=", -1)
-						.desc("xche_jdrq"));
-		System.out.println("=====jbxxjbxxjbxx===========jbxxjbxxjbxx==============");
-		if (result.size() == 0) {
-			String num = add(gongsiNo, caozuoyuan_xm);
-			Work_pz_gzEntity pz = new Work_pz_gzEntity();
-			pz.setWork_no(num);
-			pz.setChe_no(pai);
-			//给客户编码赋值
-			pz.setKehu_no(pai);
-			pz.setXche_jdrq(new Date());
-			// 查询建表需要的内容
-			List<feilvEntity> fei = dao.query(feilvEntity.class,
-					Cnd.where("feil_sy", "=", true));
-			if (fei.size() < 0) {
-				fei = dao.query(feilvEntity.class,
-						Cnd.where("feil_mc", "=", "一级标准"));
-			}
-			String mc = fei.get(0).getFeil_mc();
-			double fl = fei.get(0).getFeil_fl();
-			
-			
-			pz.setXche_sfbz(mc);
-			pz.setXche_sffl(fl);
-			pz.setFlag_fast(false);
-			pz.setMainstate(-1);
-			pz.setFlag_pad(true);
-			Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, pai);
-			if(che!=null){
-				//添加颜色和年份字段。
-				pz.setChe_cx(che.getChe_cx());		
-				pz.setChe_vin(che.getChe_vin());
-				pz.setChe_wxys(che.getChe_wxys());
-				pz.setChe_nf(che.getChe_nf());
-				pz.setGcsj(che.getChe_gcrq());
-				pz.setXche_lc(che.getChe_next_licheng());
-				KehuEntity kehu = dao.fetch(KehuEntity.class,che.getKehu_no());
-				if(kehu!=null){
-					pz.setKehu_mc(kehu.getKehu_mc());
-					pz.setKehu_dh(kehu.getKehu_dh());
-				}
-			}else{
-				//添加颜色和年份字段。
-				Work_cheliang_smEntity che_new = new Work_cheliang_smEntity();
-				che_new.setChe_no(pai);
-				che_new.setChe_wxys(che.getChe_wxys());
-				che_new.setChe_nf(che.getChe_nf());
-				dao.insert(che_new);
-				KehuEntity kehu = new KehuEntity();
-				kehu.setKehu_no(pai);
-				dao.insert(kehu);
-			}
-			
-			int nu = dao.updateIgnoreNull(pz);
-			result = dao.query(Work_pz_gzEntity.class,
-					Cnd.where("che_no", "=", pai).and("xche_jdrq", ">", date)
-							.desc("xche_jdrq"));
-		}
-		for (Work_pz_gzEntity o : result) {
-			Work_cheliang_smEntity ss = dao.fetch(Work_cheliang_smEntity.class,
-					o.getChe_no());
-			if (ss != null)
-				o.setGcsj(ss.getChe_gcrq());
-		}
-		String json = Json.toJson(result, JsonFormat.full());
-		if (result.size() != 0) {
-			return jsons.json(1, result.size(), 1, json);
-		}
-		return jsons.json(1, result.size(), 0, json);
+	public String jbxx(String che_no, String gongsiNo, String caozuoyuan_xm, String work_no) {
+        Work_pz_gzEntity pz = new Work_pz_gzEntity();
+	    if (!"".equals(work_no)) {
+            pz = dao.fetch(Work_pz_gzEntity.class, work_no);
+        } else {
+            java.util.Calendar rightNow = java.util.Calendar.getInstance();
+            java.text.SimpleDateFormat sim = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            // 如果是后退几天，就写 -天数 例如：
+            rightNow.add(java.util.Calendar.DAY_OF_MONTH, -20);
+            // 进行时间转换
+            String date = sim.format(rightNow.getTime());
+            List<Work_pz_gzEntity> result = dao.query(Work_pz_gzEntity.class,
+                    Cnd.where("che_no", "=", che_no)
+                            .and("xche_jdrq", ">", date)
+                            .and("flag_fast", "=", 0)
+                            .and("mainstate", "=", -1)
+                            .desc("xche_jdrq"));
+            if (result.size() == 0) {
+                String num = add(gongsiNo, caozuoyuan_xm);
+                pz.setWork_no(num);
+                pz.setChe_no(che_no);
+                pz.setXche_jdrq(new Date());
+                // 查询建表需要的内容
+                List<feilvEntity> fei = dao.query(feilvEntity.class,
+                        Cnd.where("feil_sy", "=", true));
+                if (fei.size() < 0) {
+                    fei = dao.query(feilvEntity.class,
+                            Cnd.where("feil_mc", "=", "一级标准"));
+                }
+                String mc = fei.get(0).getFeil_mc();
+                double fl = fei.get(0).getFeil_fl();
+                pz.setXche_sfbz(mc);
+                pz.setXche_sffl(fl);
+                pz.setFlag_pad(true);
+                pz.setFlag_fast(false);
+                pz.setMainstate(-1);
+                Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, che_no);
+                if (che != null) {
+                    //添加颜色和年份字段。
+                    pz.setChe_cx(che.getChe_cx());
+                    pz.setChe_vin(che.getChe_vin());
+                    pz.setGcsj(che.getChe_gcrq());
+                    pz.setChe_wxys(che.getChe_wxys());
+                    pz.setChe_nf(che.getChe_nf());
+                    pz.setXche_lc(che.getChe_next_licheng());
+                    KehuEntity kehu = dao.fetch(KehuEntity.class, che.getKehu_no());
+                    if (kehu != null) {
+                        pz.setKehu_no(kehu.getKehu_no());
+                        pz.setKehu_mc(kehu.getKehu_mc());
+                        pz.setKehu_dh(kehu.getKehu_dh());
+                    }
+                }
+
+                dao.updateIgnoreNull(pz);
+            } else {
+                pz = result.get(0);
+            }
+            // 查询仓库，准备获取名字
+            Sql sql1 = Sqls
+                    .queryRecord("select * from sm_cangk where isnull(cangk_hide,0) = 0 ");
+            dao.execute(sql1);
+            List<Record> res = sql1.getList(Record.class);
+            for (Record record : res) {
+                if (pz.getCangk_dm() != null && !pz.getCangk_dm().equals("")) {
+                    // 如果草稿单中的仓库代码和仓库中的代码相同，则把仓库名称赋给草稿单中的内容
+                    if (record.getString("cangk_dm").equals(pz.getCangk_dm())) {
+                        pz.setCangk_mc(record.getString("cangk_mc"));
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+        String json = Json.toJson(pz, JsonFormat.full());
+        return jsons.json(1, 1, 1, json);
 	}
 
 	/**
@@ -195,16 +188,15 @@ public class ordersModule {
 	 */
 	@At
 	@Ok("raw:json")
-	public String lsjd(int pageNumber, String kehu_mc, String che_no) {
-		//新加cx，vin2017年10月12日14:53:08
-        StringBuilder _sql = new StringBuilder("select a.*,k.kehu_mc,b.che_baoyanglicheng,b.che_bs,b.che_ccrq,b.che_gcrq,k.kehu_dh,b.che_cx,b.che_vin  from work_pz_sj  a left join work_cheliang_sm b on a.che_no=b.che_no left join kehu k on a.kehu_no = k.kehu_no  where  a.flag_fast=0  and   a.mainstate>=-1 and  a.mainstate<=4 ");
+	public String lsjd(String kehu_mc, String che_no, String gongsino) {
+        StringBuilder _sql = new StringBuilder("select a.*,k.kehu_mc,b.che_baoyanglicheng,b.che_bs,b.che_ccrq,b.che_gcrq,k.kehu_dh,b.che_cx,b.che_vin from work_pz_gz a left join work_cheliang_sm b on a.che_no=b.che_no left join kehu k on a.kehu_no = k.kehu_no where a.flag_fast=0 and a.mainstate=-1 ");
 		if (che_no != null && che_no.length() > 0) {
-			_sql.append(" and a.che_no like '%" + che_no + "%'");
+			_sql.append(" and a.che_no like '%").append(che_no).append("%'");
 		}
         if (kehu_mc != null && kehu_mc.length() > 0) {
-            _sql.append(" and kehu_mc like '%" + kehu_mc + "%'");
+            _sql.append(" and kehu_mc like '%").append(kehu_mc).append("%'");
         }
-		_sql.append(" order by id desc ");
+		_sql.append(" order by xche_jdrq desc");
 		Sql sql = Sqls.queryRecord(_sql.toString());
 		dao.execute(sql);
 		List<Record> res = sql.getList(Record.class);
