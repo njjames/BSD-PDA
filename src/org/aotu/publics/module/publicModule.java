@@ -212,21 +212,18 @@ public class publicModule{
 	public void saveKeHu(String kehu_no, String kehu_mc, String kehu_dh) {
 		List<KehuEntity> list = dao.query(KehuEntity.class,
 				Cnd.where("kehu_no", "=", kehu_no));
-		if (list.size() > 0) {
-			KehuEntity ke = list.get(0);
-			if(kehu_mc!=null && kehu_mc.length()>0)
-			ke.setKehu_mc(kehu_mc);
-			if(kehu_dh!=null && kehu_dh.length()>0)
-			ke.setKehu_dh(kehu_dh);
-			ke.setKeHu_CanUsedInGongSi("全公司共享");
-			dao.update(ke);
+        KehuEntity kehuEntity = dao.fetch(KehuEntity.class, kehu_no);
+        if (kehuEntity != null) {
+            kehuEntity.setKehu_mc(kehu_mc);
+            kehuEntity.setKehu_dh(kehu_dh);
+			dao.update(kehuEntity, "^kehu_mc|kehu_dh$");
 		}else{
-			KehuEntity ke = new KehuEntity();
-			ke.setKehu_mc(kehu_mc);
-			ke.setKehu_dh(kehu_dh);
-			ke.setKehu_no(kehu_no);
-			ke.setKeHu_CanUsedInGongSi("全公司共享");
-			dao.insert(ke);
+            kehuEntity = new KehuEntity();
+            kehuEntity.setKehu_no(kehu_no);
+            kehuEntity.setKehu_mc(kehu_mc);
+            kehuEntity.setKehu_dh(kehu_dh);
+            kehuEntity.setKeHu_CanUsedInGongSi("全公司共享");
+			dao.insert(kehuEntity);
 		}
 	}
 	
@@ -304,27 +301,25 @@ public class publicModule{
 	 */
 	public Work_cheliang_smEntity saveCheInfose(String xche_bz,String che_no, Date che_gcrq, String che_cx,
 			String che_vin,String che_nf,String che_wxys) {
-		List<Work_cheliang_smEntity> list_che = dao.query(
-				Work_cheliang_smEntity.class, Cnd.where("che_no", "=", che_no));
-		if (list_che.size() > 0) {
-			Work_cheliang_smEntity che = list_che.get(0);
-			che.setChe_bz(xche_bz);
-			che.setChe_cx(che_cx);
-			che.setChe_vin(che_vin);
-			che.setChe_gcrq(che_gcrq);
-			che.setChe_nf(che_nf);
-			che.setChe_wxys(che_wxys);
-			dao.update(che);
-			return che;
-		}else{
-			Work_cheliang_smEntity che = new Work_cheliang_smEntity();
-			che.setChe_cx(che_cx);
-			che.setChe_bz(xche_bz);
-			che.setChe_vin(che_vin);
-			che.setChe_gcrq(che_gcrq);
-			che.setKehu_no(che_no);
-			dao.insert(che);
-			return che;
+        Work_cheliang_smEntity entity = dao.fetch(Work_cheliang_smEntity.class, che_no);
+        if (entity != null) {
+            entity.setChe_cx(che_cx);
+            entity.setChe_vin(che_vin);
+            entity.setChe_gcrq(che_gcrq);
+            entity.setChe_nf(che_nf);
+            entity.setChe_wxys(che_wxys);
+            entity.setChe_bz(xche_bz);
+            dao.update(entity, "^che_cx|che_vin|che_gcrq|che_nf|che_wxys|xche_bz$");
+			return entity;
+		}else {
+            entity = new Work_cheliang_smEntity();
+            entity.setKehu_no(che_no);
+            entity.setChe_cx(che_cx);
+            entity.setChe_bz(xche_bz);
+            entity.setChe_vin(che_vin);
+            entity.setChe_gcrq(che_gcrq);
+			dao.insert(entity);
+			return entity;
 		}
 	}
 	/**
@@ -1652,7 +1647,6 @@ public class publicModule{
 	/**
 	 * 删除照片信息
 	 * @author LHW
-	 * @param ke
 	 * @time 2017年9月4日08:59:58
 	 * @return
 	 */

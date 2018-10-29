@@ -1395,143 +1395,111 @@ public class KuaixiuModule {
         dao.execute(sql126);
         List<Record> res = sql126.getList(Record.class);
         String Option_Value = res.get(0).getString("Option_Value");
-
         if ("1".equals(Option_Value)) {
             String json = pu.getWeXinDiZhi();
             JsonParser parse = new JsonParser(); // 创建json解析器
-
             JsonObject js = (JsonObject) parse.parse(json); // 创建jsonObject对象
             JsonArray array = js.get("data").getAsJsonArray();
-
-
             JsonObject subObject = array.get(0).getAsJsonObject();
             String sys_weixindizhi = subObject.get("sys_weixindizhi").getAsString();
-
-            System.out.println(sys_weixindizhi);
-            if (sys_weixindizhi != null && sys_weixindizhi != "") {
-                sys_weixindizhi += "/WS/ws_pub.asmx/GetDogDaoQi";
-                HttpClient httpCLient = new DefaultHttpClient();
-                HttpGet httpget = new HttpGet(sys_weixindizhi);
-
-                // 配置请求信息（请求时间）
-                RequestConfig rc = RequestConfig.custom().setSocketTimeout(5000)
-                        .setConnectTimeout(5000).build();
-                // 获取使用DefaultHttpClient对象
-                CloseableHttpClient httpclient = HttpClients.createDefault();
-                // 返回结果
+            if (sys_weixindizhi != null && !"".equals(sys_weixindizhi)) {
                 String result = "";
+                sys_weixindizhi += "/WS/ws_pub.asmx/GetDogDaoQi";
+                CloseableHttpClient httpclient = null;
+                CloseableHttpResponse response = null;
                 try {
-                    if (sys_weixindizhi != null) {
-                        // 创建HttpGet对象，将URL通过构造方法传入HttpGet对象
-                        HttpPost httpget1 = new HttpPost(sys_weixindizhi);
-                        // 将配置好请求信息附加到http请求中;
-                        httpget.setConfig(rc);
-                        // 执行DefaultHttpClient对象的execute方法发送GET请求，通过CloseableHttpResponse接口的实例，可以获取服务器返回的信息
-                        CloseableHttpResponse response = httpclient.execute(httpget1);
-
-                        try {
-                            // 得到返回对象
-                            HttpEntity entity = response.getEntity();
-                            if (entity != null) {
-                                // 获取返回结果
-                                result = EntityUtils.toString(entity);
-                                int i = result.length();
-                                result = result.substring(result.length() - 19, i - 9);//截取两个数字之间的部分
-                                System.out.println(result);
-                                SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd");
-                                Date de = new Date();
-                                String string = date.format(de);
-                                Date date2 = date.parse(result);
-                                Date date3 = date.parse(string);
-                                System.out.println(date2 + "====" + date3);
-                                if (date2.getTime() > date3.getTime()) {
-                                    Sql sql121 = Sqls
-                                            .queryRecord("select  * from work_pz_gz where work_no = '"
-                                                    + work_no + "'");
-                                    dao.execute(sql121);
-                                    List<Record> res126 = sql121.getList(Record.class);
-                                    System.out.println(res126.size());
-                                    if (res126.size() > 0) {
-                                        String che_no = res126.get(0).getString("che_no");
-                                        String gongsino = res126.get(0).getString("gongsino");
-                                        //String xche_jcr = res126.get(0).getString("xche_jcr");
-                                        Map<String, Object> map = new HashMap<String, Object>();
-                                        map.put("list_code", "106");
-                                        map.put("tm_type", "wt_WeiXiuJinDu");
-                                        map.put("gongsino", gongsino);
-                                        map.put("che_no", che_no);
-                                        map.put("xche_wxjd", "已进厂");
-                                        map.put("xche_bz", "欢迎您来到本店！");
-			            					
-			            					/*map.put("list_code", "105");
-			            					map.put("tm_type", "wt_WeiXiuJieSuan");
-			            					map.put("gongsino", "01");
-			            					map.put("che_no", "冀Au2d30");
-			            					map.put("card_no", "318111");
-			            					map.put("zhifu_card_no", "");
-			            					map.put("cardinfo", "");
-			            					map.put("xche_jsrq", "2017-09-01 14:38:26");
-			            					map.put("xche_jb", "");
-			            					map.put("xche_ysje", "100");
-			            					map.put("work_no", "WX0120170900007");*/
-                                        String json1 = new Gson().toJson(map);
-
-                                        json1 = "strJson=" + json1;
-                                        String lujing = sys_weixindizhi + "/PadWeiXin/CssWeiXinAction.ashx";
-                                        //lujing="http://wdwx84.weixin.comtg.cn/PadWeiXin/CssWeiXinAction.ashx";
-                                        System.out.println(json1);
-                                        System.out.println(lujing);
-
-                                        byte[] data = json1.getBytes();
-                                        java.net.URL url = new java.net.URL(lujing);
-                                        System.out.println(url);
-                                        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-                                        conn.setRequestMethod("POST");
-                                        conn.setConnectTimeout(5 * 1000);// 设置连接超时时间为5秒
-                                        conn.setReadTimeout(20 * 1000);// 设置读取超时时间为20秒
-                                        // 使用 URL 连接进行输出，则将 DoOutput标志设置为 true
-                                        conn.setDoOutput(true);
-
-//			            			        conn.setRequestProperty("Content-Type", "text/xml;charset=UTF-8");  
-                                        // conn.setRequestProperty("Content-Encoding","gzip");
-                                        conn.setRequestProperty("Content-Length", String.valueOf(data.length));
-                                        OutputStream outStream = conn.getOutputStream();// 返回写入到此连接的输出流
-                                        outStream.write(data);
-                                        outStream.close();// 关闭流
-                                        String msg = "";// 保存调用http服务后的响应信息
-                                        // 如果请求响应码是200，则表示成功
-                                        if (conn.getResponseCode() == 200) {
-                                            // HTTP服务端返回的编码是UTF-8,故必须设置为UTF-8,保持编码统一,否则会出现中文乱码
-                                            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
-                                            msg = in.readLine();
-                                            in.close();
-                                            System.out.println(msg);
-                                        }
-                                        conn.disconnect();// 断开连接
-                                        System.out.println(msg);
-                                    }
-
+                    // 获取使用DefaultHttpClient对象
+                    httpclient = HttpClients.createDefault();
+                    // 配置请求信息（请求时间）
+                    RequestConfig rc = RequestConfig.custom().setSocketTimeout(5000)
+                            .setConnectTimeout(5000).build();
+                    HttpGet httpget = new HttpGet(sys_weixindizhi);
+                    // 将配置好请求信息附加到http请求中;
+                    httpget.setConfig(rc);
+                    // 执行DefaultHttpClient对象的execute方法发送GET请求，通过CloseableHttpResponse接口的实例，可以获取服务器返回的信息
+                    response = httpclient.execute(httpget);
+                    HttpEntity entity = response.getEntity();
+                    if (entity != null) {
+                        // 获取返回结果
+                        result = EntityUtils.toString(entity);
+                        int i = result.length();
+                        result = result.substring(result.length() - 19, i - 9);//截取两个数字之间的部分
+                        System.out.println(result);
+                        SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd");
+                        Date de = new Date();
+                        String string = date.format(de);
+                        Date date2 = date.parse(result);
+                        Date date3 = date.parse(string);
+                        System.out.println(date2 + "====" + date3);
+                        if (date2.getTime() > date3.getTime()) {
+                            Sql sql121 = Sqls
+                                    .queryRecord("select  * from work_pz_gz where work_no = '"
+                                            + work_no + "'");
+                            dao.execute(sql121);
+                            List<Record> res126 = sql121.getList(Record.class);
+                            System.out.println(res126.size());
+                            if (res126.size() > 0) {
+                                String che_no = res126.get(0).getString("che_no");
+                                String gongsino = res126.get(0).getString("gongsino");
+                                Map<String, Object> map = new HashMap<String, Object>();
+                                map.put("list_code", "106");
+                                map.put("tm_type", "wt_WeiXiuJinDu");
+                                map.put("gongsino", gongsino);
+                                map.put("che_no", che_no);
+                                map.put("xche_wxjd", "已进厂");
+                                map.put("xche_bz", "欢迎您来到本店！");
+                                String json1 = new Gson().toJson(map);
+                                json1 = "strJson=" + json1;
+                                String lujing = sys_weixindizhi + "/PadWeiXin/CssWeiXinAction.ashx";
+                                byte[] data = json1.getBytes();
+                                java.net.URL url = new java.net.URL(lujing);
+                                System.out.println(url);
+                                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                                conn.setRequestMethod("POST");
+                                conn.setConnectTimeout(5 * 1000);// 设置连接超时时间为5秒
+                                conn.setReadTimeout(20 * 1000);// 设置读取超时时间为20秒
+                                // 使用 URL 连接进行输出，则将 DoOutput标志设置为 true
+                                conn.setDoOutput(true);
+//			            			    conn.setRequestProperty("Content-Type", "text/xml;charset=UTF-8");
+                                // conn.setRequestProperty("Content-Encoding","gzip");
+                                conn.setRequestProperty("Content-Length", String.valueOf(data.length));
+                                OutputStream outStream = conn.getOutputStream();// 返回写入到此连接的输出流
+                                outStream.write(data);
+                                outStream.close();// 关闭流
+                                String msg = "";// 保存调用http服务后的响应信息
+                                // 如果请求响应码是200，则表示成功
+                                if (conn.getResponseCode() == 200) {
+                                    // HTTP服务端返回的编码是UTF-8,故必须设置为UTF-8,保持编码统一,否则会出现中文乱码
+                                    BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
+                                    msg = in.readLine();
+                                    in.close();
+                                    System.out.println(msg);
                                 }
-
+                                conn.disconnect();// 断开连接
+                                System.out.println(msg);
                             }
-                        } finally {
-                            // 关闭到客户端的连接
-                            response.close();
+
                         }
                     }
-                } catch (ClientProtocolException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
-                    try {
-                        // 关闭http请求
-                        httpclient.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    weixinClose(httpclient, response);
                 }
             }
+        }
+    }
+
+    private void weixinClose(CloseableHttpClient httpclient, CloseableHttpResponse response) {
+        try {
+            if (response != null) {
+                response.close();
+            }
+            if (httpclient != null) {
+                httpclient.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -1660,18 +1628,7 @@ public class KuaixiuModule {
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
-                    try {
-                        // 关闭到客户端的连接
-                        if (response != null) {
-                            response.close();
-                        }
-                        // 关闭http请求
-                        if (httpclient != null) {
-                            httpclient.close();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    weixinClose(httpclient, response);
                 }
             }
         }
