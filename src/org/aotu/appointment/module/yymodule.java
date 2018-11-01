@@ -68,87 +68,66 @@ public class yymodule {
 	 */
 	@At
 	@Ok("raw:json")
-	public String jbxx(String pai, String gongsiNo, String caozuoyuan_xm) {
-
-		java.util.Calendar rightNow = java.util.Calendar.getInstance();
-		java.text.SimpleDateFormat sim = new java.text.SimpleDateFormat(
-				"yyyy-MM-dd HH:mm:ss");
-		// 如果是后退几天，就写 -天数 例如：
-		rightNow.add(java.util.Calendar.DAY_OF_MONTH, -20);
-		// 进行时间转换
-		String date = sim.format(rightNow.getTime());
-
-		List<Work_yuyue_pzEntity> result = dao.query(Work_yuyue_pzEntity.class,
-				Cnd.where("che_no", "=", pai).and("yuyue_progress","<>","已进店").and("yuyue_progress","<>","已离店").and("yuyue_progress","<>","已取消").and("yuyue_jlrq", ">", date)
-						.desc("yuyue_jlrq"));
-		if (result.size() == 0) {
-			String num = add(gongsiNo, caozuoyuan_xm);
-			if (num != null) {
-				Work_yuyue_pzEntity yuyue = dao.fetch(Work_yuyue_pzEntity.class, num);
-				yuyue.setChe_no(pai);
-				//给客户编码赋值
-				yuyue.setKehu_no(pai);
-				yuyue.setYuyue_no(num);
-				yuyue.setWork_no("");
-				yuyue.setYuyue_scjcrq(new Date());
-				yuyue.setYuyue_jlrq(new Date());
-
-				// 查询建表需要的内容
-				List<feilvEntity> fei = dao.query(feilvEntity.class,
-						Cnd.where("feil_sy", "=", true));
-				if (fei.size() < 0) {
-					fei = dao.query(feilvEntity.class,
-							Cnd.where("feil_mc", "=", "一级标准"));
-				}
-				String mc = fei.get(0).getFeil_mc();
-				double fl = fei.get(0).getFeil_fl();
-				yuyue.setYuyue_sfbz(mc);
-				yuyue.setYuyue_sffl(fl);
-				yuyue.setYuyue_state(0);
-				yuyue.setYuyue_progress("");
-				Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, pai);
-				if(che!=null){
-					yuyue.setChe_cx(che.getChe_cx());	
-					yuyue.setChe_vin(che.getChe_vin());
-					yuyue.setGcsj(che.getChe_gcrq());
-					yuyue.setYuyue_yjjclc(che.getChe_next_licheng());
-					KehuEntity kehu = dao.fetch(KehuEntity.class,che.getKehu_no());
-					if(kehu!=null){
-						yuyue.setKehu_mc(kehu.getKehu_mc());
-						yuyue.setKehu_dh(kehu.getKehu_dh());
+	public String jbxx(String pai, String gongsiNo, String caozuoyuan_xm, String work_no) {
+		Work_yuyue_pzEntity pz = new Work_yuyue_pzEntity();
+		if (!"".equals(work_no)) {
+			pz = dao.fetch(Work_yuyue_pzEntity.class, work_no);
+		} else {
+			java.util.Calendar rightNow = java.util.Calendar.getInstance();
+			java.text.SimpleDateFormat sim = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			// 如果是后退几天，就写 -天数 例如：
+			rightNow.add(java.util.Calendar.DAY_OF_MONTH, -20);
+			// 进行时间转换
+			String date = sim.format(rightNow.getTime());
+			List<Work_yuyue_pzEntity> list = dao.query(Work_yuyue_pzEntity.class,
+					Cnd.where("che_no", "=", pai)
+                            .and("yuyue_progress", "<>", "已进店")
+                            .and("yuyue_progress", "<>", "已离店")
+                            .and("yuyue_progress", "<>", "已取消")
+                            .and("yuyue_jlrq", ">", date)
+							.desc("yuyue_jlrq"));
+			if (list.size() == 0) {
+				String num = add(gongsiNo, caozuoyuan_xm);
+				if (num != null) {
+                    pz.setChe_no(pai);
+                    pz.setKehu_no(pai);
+                    pz.setYuyue_no(num);
+                    pz.setWork_no("");
+                    pz.setYuyue_scjcrq(new Date());
+                    pz.setYuyue_jlrq(new Date());
+					// 查询建表需要的内容
+					List<feilvEntity> fei = dao.query(feilvEntity.class,
+							Cnd.where("feil_sy", "=", true));
+					if (fei.size() < 0) {
+						fei = dao.query(feilvEntity.class, Cnd.where("feil_mc", "=", "一级标准"));
 					}
-
+					String mc = fei.get(0).getFeil_mc();
+					double fl = fei.get(0).getFeil_fl();
+                    pz.setYuyue_sfbz(mc);
+                    pz.setYuyue_sffl(fl);
+                    pz.setYuyue_state(0);
+                    pz.setYuyue_progress("");
+					Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, pai);
+					if (che != null) {
+                        pz.setChe_cx(che.getChe_cx());
+                        pz.setChe_vin(che.getChe_vin());
+                        pz.setGcsj(che.getChe_gcrq());
+                        pz.setYuyue_yjjclc(che.getChe_next_licheng());
+						KehuEntity kehu = dao.fetch(KehuEntity.class, che.getKehu_no());
+						if (kehu != null) {
+                            pz.setKehu_mc(kehu.getKehu_mc());
+                            pz.setKehu_dh(kehu.getKehu_dh());
+                            pz.setKehu_no(kehu.getKehu_no());
+						}
+					}
+					dao.updateIgnoreNull(pz);
 				}
-				dao.update(yuyue);				
-			}
+			} else {
+                pz = list.get(0);
+            }
 		}
-
-		result = dao.query(Work_yuyue_pzEntity.class,
-				Cnd.where("che_no", "=", pai).and("yuyue_progress","<>","已进店").and("yuyue_progress","<>","已离店").and("yuyue_progress","<>","已取消"));
-		for (Work_yuyue_pzEntity o : result) {
-			Work_cheliang_smEntity ss = dao.fetch(Work_cheliang_smEntity.class,
-					o.getChe_no());
-			if(ss!=null){
-				o.setGcsj(ss.getChe_gcrq());
-			}
-			else{
-				Work_cheliang_smEntity cheliang = new Work_cheliang_smEntity();
-				cheliang.setChe_no(pai);
-				cheliang.setKehu_no(pai);
-				dao.insert(cheliang);
-			}
-		}
-//		if(dao.fetch(KehuEntity.class, pai)==null){
-//			KehuEntity kehu = new KehuEntity();
-//			kehu.setKehu_no(pai);
-//			kehu.setLastModifyTime(new Date());
-//			dao.insert(kehu);
-//		}
-		String json = Json.toJson(result, JsonFormat.full());
-		if (result.size() != 0) {
-			return jsons.json(1, result.size(), 1, json);
-		}
-		return jsons.json(1, result.size(), 0, json);
+        String json = Json.toJson(pz, JsonFormat.full());
+        return jsons.json(1, 1, 1, json);
 	}
 
 	/**

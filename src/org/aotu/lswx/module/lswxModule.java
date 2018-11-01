@@ -1,18 +1,9 @@
 package org.aotu.lswx.module;
 
-import java.io.UnsupportedEncodingException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.LinkedList;
-import java.util.List;
-
 import org.aotu.Jsons;
-import org.aotu.lswx.entity.Work_ll_sjEntity;
 import org.aotu.lswx.entity.Work_mx_sjEntity;
 import org.aotu.lswx.entity.Work_pz_sjEntity;
-import org.aotu.order.entity.Work_ll_gzEntity;
-import org.aotu.publics.eneity.KehuEntity;
-import org.aotu.publics.eneity.Work_cheliang_smEntity;
+import org.aotu.user.entity.userEntity;
 import org.aotu.util.BsdUtils;
 import org.nutz.dao.Cnd;
 import org.nutz.dao.Dao;
@@ -28,6 +19,12 @@ import org.nutz.json.JsonFormat;
 import org.nutz.mvc.annotation.At;
 import org.nutz.mvc.annotation.Ok;
 
+import java.io.UnsupportedEncodingException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.LinkedList;
+import java.util.List;
+
 
 @IocBean
 @At("/lswx")
@@ -38,71 +35,54 @@ public class lswxModule {
 	
 	@Inject
 	Jsons jsons;
-	
-	/**
-	 * 历史报价 
-	 * @param che_no
-	 * @param pageNumber
-	 * @param type   0所有，1，快修
-	 * @return
-	 */
-	@At("/")
-	@Ok("raw:json")
-	public String lswx(String che_no,int pageNumber,int type){
-		System.out.println(pageNumber);
-		Pager pager = dao.createPager(pageNumber, 20);
-		List<Work_pz_sjEntity> result;
-		//字段过多注意店家字段的时候有重复字段
-		String sql_ = "select pz.Xche_jsrq,pz.Card_no,pz.Zhifu_card_no,pz.Zhifu_card_je,pz.Zhifu_card_xj,pz.Flag_cardjs,kh.kehu_mc,kh.kehu_xm,kh.kehu_dh,pz.id,pz.work_no,kh.kehu_no,kh.kehulb_mc,cl.che_no,pz.xche_hjje,pz.xche_jdrq,pz.xche_jcr from work_pz_sj pz,kehu kh,work_cheliang_sm cl where pz.kehu_no = kh.kehu_no and pz.che_no = cl.che_no";
-		
-		if(che_no!=null){
-			sql_ = "select pz.Xche_jsrq,pz.Card_no,pz.Zhifu_card_no,pz.Zhifu_card_je,pz.Zhifu_card_xj,pz.Flag_cardjs,kh.kehu_mc,kh.kehu_xm,kh.kehu_dh,pz.id,pz.work_no,kh.kehu_no,kh.kehulb_mc,cl.che_no,pz.xche_hjje,pz.xche_jdrq,pz.xche_jcr from work_pz_sj pz,kehu kh,work_cheliang_sm cl where  pz.che_no like '%"+che_no+"%' and pz.kehu_no = kh.kehu_no and pz.che_no = cl.che_no";
-		}
-		if(type==1)
-			sql_+=" and pz.flag_fast=1";
-		else
-			sql_+=" and pz.flag_fast=0";
-		sql_+="  order by pz.id desc";
-		Sql sql = Sqls.queryEntity(sql_);
-		sql.setPager(pager);
-		sql.setCallback(new SqlCallback() {
-			public Object invoke(Connection conn, java.sql.ResultSet rs, Sql sql)
-			throws SQLException {
-			List<Work_pz_sjEntity> list = new LinkedList<Work_pz_sjEntity>();
-			while (rs.next()){
-				Work_pz_sjEntity pz = new Work_pz_sjEntity();
-				pz.setId(rs.getInt("id"));
-				pz.setWork_no(rs.getString("work_no"));
-				pz.setKehu_no(rs.getString("kehu_no"));
-				//客户电话
-				pz.setKehu_bxno(rs.getString("kehu_dh"));
-				pz.setKemu_mc(rs.getString("kehulb_mc"));
-				pz.setChe_no(rs.getString("che_no"));
-				pz.setXche_hjje(rs.getDouble("xche_hjje"));
-				pz.setXche_jdrq(rs.getDate("xche_jdrq"));
-				pz.setXche_jcr(rs.getString("xche_jcr"));
-				pz.setKehu_mc(rs.getString("kehu_mc"));
-				pz.setKehu_xm(rs.getString("kehu_xm"));
-				pz.setKehu_dh(rs.getString("kehu_dh"));
-				pz.setXche_jsrq(rs.getDate("Xche_jsrq"));
-				pz.setCard_no(rs.getString("Card_no"));
-				pz.setZhifu_card_no(rs.getString("Zhifu_card_no"));
-				pz.setZhifu_card_je(rs.getDouble("Zhifu_card_je"));
-				pz.setZhifu_card_xj(rs.getDouble("Zhifu_card_xj"));
-				pz.setFlag_cardjs(rs.getBoolean("Flag_cardjs"));
-				list.add(pz);
-			}
-			return list;
-			}
-		});
-		dao.execute(sql);
-		result =  sql.getList(Work_pz_sjEntity.class);
-		String json = Json.toJson(result, JsonFormat.full());
-		if (result.size() != 0) {
-			return jsons.json(1, result.size(), 1, json);
-		}
-		return jsons.json(1, result.size(), 0, json);
-	}
+
+    /**
+     * 历史报价
+     *
+     * @param che_no
+     * @param pageNumber
+     * @param type       0所有，1，快修
+     * @return
+     */
+    @At("/")
+    @Ok("raw:json")
+    public String lswx(String che_no, int pageNumber, int type, int caozuoyuanid) {
+        userEntity fetch = dao.fetch(userEntity.class, caozuoyuanid);
+        if (fetch == null) {
+            return jsons.json(1, 0, 0, "没有此操作员");
+        } else {
+            String gongsiGndm = fetch.getGongsi_gndm();
+            String gongsiGndmQuote = BsdUtils.gn2quote(gongsiGndm);
+            Pager pager = dao.createPager(pageNumber, 20);
+            List<Work_pz_sjEntity> result;
+            String sql_ = "select pz.Xche_jsrq,pz.Card_no,pz.Zhifu_card_no,pz.Zhifu_card_je,pz.Zhifu_card_xj,pz.Flag_cardjs,kh.kehu_mc,kh.kehu_xm,kh.kehu_dh," +
+                    "pz.id,pz.work_no,kh.kehu_no,kh.kehulb_mc,cl.che_no,(xche_hjje - xche_xzrgf_je - xche_xzclf_je) as xche_hjje,pz.xche_jdrq,pz.xche_jcr " +
+                    "from work_pz_sj pz,kehu kh,work_cheliang_sm cl where pz.kehu_no = kh.kehu_no and pz.che_no = cl.che_no";
+            if (che_no != null && !"".equals(che_no)) {
+                if (type == -1) {
+                    sql_ += " and pz.che_no='" + che_no + "'";
+                } else {
+                    sql_ += " and pz.che_no like '%" + che_no + "%'";
+                }
+            }
+            if (type == 1) {
+                sql_ += " and pz.flag_fast=1";
+            } else if (type == 0) {
+                sql_ += " and pz.flag_fast=0";
+            }
+            sql_ += " and (pz.GongSino in(" + gongsiGndmQuote + ") or isnull(pz.GongSiNo,'')='')";
+            sql_ += "  order by pz.Xche_jsrq desc";
+            Sql sql = Sqls.queryRecord(sql_);
+            sql.setPager(pager);
+            dao.execute(sql);
+            List<Record> res = sql.getList(Record.class);
+            String json = Json.toJson(res, JsonFormat.full());
+            if (res.size() != 0) {
+                return jsons.json(1, res.size(), 1, json);
+            }
+            return jsons.json(1, res.size(), 0, json);
+        }
+    }
 	
 	/**
 	 * 维修项目明细
@@ -309,7 +289,6 @@ public class lswxModule {
 	 * 历史维修配件建议
 	 * 
 	 * @param work_no
-	 * @param pageNumber
 	 * @return
 	 */
 	@At
