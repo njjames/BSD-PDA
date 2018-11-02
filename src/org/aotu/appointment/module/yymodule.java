@@ -68,10 +68,10 @@ public class yymodule {
 	 */
 	@At
 	@Ok("raw:json")
-	public String jbxx(String pai, String gongsiNo, String caozuoyuan_xm, String work_no) {
+	public String jbxx(String pai, String gongsiNo, String caozuoyuan_xm, String yuyue_no) {
 		Work_yuyue_pzEntity pz = new Work_yuyue_pzEntity();
-		if (!"".equals(work_no)) {
-			pz = dao.fetch(Work_yuyue_pzEntity.class, work_no);
+		if (!"".equals(yuyue_no)) {
+			pz = dao.fetch(Work_yuyue_pzEntity.class, yuyue_no);
 		} else {
 			java.util.Calendar rightNow = java.util.Calendar.getInstance();
 			java.text.SimpleDateFormat sim = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -89,9 +89,9 @@ public class yymodule {
 			if (list.size() == 0) {
 				String num = add(gongsiNo, caozuoyuan_xm);
 				if (num != null) {
+                    pz.setYuyue_no(num);
                     pz.setChe_no(pai);
                     pz.setKehu_no(pai);
-                    pz.setYuyue_no(num);
                     pz.setWork_no("");
                     pz.setYuyue_scjcrq(new Date());
                     pz.setYuyue_jlrq(new Date());
@@ -140,8 +140,7 @@ public class yymodule {
 	@At
 	@Ok("raw:json")
 	public String wxxm(String yuyue_no) {
-		List<Work_yuyue_wxxmEntity> result = dao.query(
-				Work_yuyue_wxxmEntity.class,
+		List<Work_yuyue_wxxmEntity> result = dao.query(Work_yuyue_wxxmEntity.class,
 				Cnd.where("yuyue_no", "=", yuyue_no));
 		String json = Json.toJson(result, JsonFormat.full());
 		if (result.size() != 0) {
@@ -263,8 +262,6 @@ public class yymodule {
 
 	/**
 	 * 添加基本信息
-	 * 
-	 * @param yuyue_no
 	 * @return
 	 */
 	@At
@@ -306,8 +303,7 @@ public class yymodule {
 
 	/**
 	 * 添加基本信息
-	 * 
-	 * @param yuyue_no
+	 *
 	 * @return
 	 */
 	@At
@@ -344,114 +340,92 @@ public class yymodule {
 
 	/**
 	 * 添加维修项目
-	 * 
-	 * @param yuyue_no
 	 * @return
 	 */
 	@At
 	@Ok("raw:json")
-	public String addwxxm(String json) {
+	public String addwxxm(String addLists) {
 		JsonParser parse = new JsonParser(); // 创建json解析器
 		try {
-			JsonObject js = (JsonObject) parse.parse(json); // 创建jsonObject对象
-			JsonArray array = js.get("data").getAsJsonArray();
+            JsonArray array = (JsonArray) parse.parse(addLists);
 			for (int i = 0; i < array.size(); i++) {
-				Work_yuyue_wxxmEntity yuyue = new Work_yuyue_wxxmEntity();
-				JsonObject subObject = array.get(i).getAsJsonObject();
-				String nu = subObject.get("yuyue_no").getAsString();
-
-				yuyue.setYuyue_no(subObject.get("yuyue_no").getAsString());
-				if (i == 0) {
-					Work_yuyue_wxxmEntity ks = dao.fetch(
-							Work_yuyue_wxxmEntity.class,
-							Cnd.where("yuyue_no", "=", nu));
-					if (ks != null) {
-						// dao.query(Work_yuyue_wxxmEntity.class,
-						// Cnd.where("yuyue_no","=",nu));
-						dao.clear(Work_yuyue_wxxmEntity.class,
-								Cnd.where("yuyue_no", "=", nu));
-					}
-				}
-				yuyue.setWxxm_yje(subObject.get("wxxm_je").getAsDouble());
-				yuyue.setWxxm_no(subObject.get("wxxm_no").getAsString());
-				yuyue.setWxxm_mc(subObject.get("wxxm_mc").getAsString());
-				yuyue.setWxxm_gs(subObject.get("wxxm_gs").getAsDouble());
-				yuyue.setWxxm_je(subObject.get("wxxm_je").getAsDouble());
-				if(yuyue.getWxxm_gs()==0){
-					yuyue.setWxxm_dj(yuyue.getWxxm_je());
+                String yuyueNo = "";
+				Work_yuyue_wxxmEntity yuyueWxxmEntity = new Work_yuyue_wxxmEntity();
+				JsonObject item = array.get(i).getAsJsonObject();
+				yuyueNo = item.get("yuyue_no").getAsString();
+				yuyueWxxmEntity.setYuyue_no(yuyueNo);
+                yuyueWxxmEntity.setWxxm_no(item.get("wxxm_no").getAsString());
+                yuyueWxxmEntity.setWxxm_mc(item.get("wxxm_mc").getAsString());
+                yuyueWxxmEntity.setWxxm_gs(item.get("wxxm_gs").getAsDouble());
+                yuyueWxxmEntity.setWxxm_yje(item.get("wxxm_je").getAsDouble());
+				yuyueWxxmEntity.setWxxm_je(item.get("wxxm_je").getAsDouble());
+				if(yuyueWxxmEntity.getWxxm_gs()==0){
+					yuyueWxxmEntity.setWxxm_dj(yuyueWxxmEntity.getWxxm_je());
 				}else{
-					yuyue.setWxxm_dj(yuyue.getWxxm_je()/yuyue.getWxxm_gs());
+                    yuyueWxxmEntity.setWxxm_dj(yuyueWxxmEntity.getWxxm_je() / yuyueWxxmEntity.getWxxm_gs());
 				}
-				//try catch不好使会出现失败时间2017年10月31日14:53:27 @author LHW
-				/*try{
-					yuyue.setWxxm_dj(yuyue.getWxxm_je()/yuyue.getWxxm_gs());
-				}catch(java.lang.Exception e){
-					
-				}*/
-				yuyue.setWxxm_zt(subObject.get("wxxm_zt").getAsString());
-				yuyue.setWxxm_khgs(subObject.get("wxxm_gs").getAsDouble());
-				Work_yuyue_wxxmEntity dd = dao.insert(yuyue);
-				if (dd == null) {
-					return "失败";
+				yuyueWxxmEntity.setWxxm_zt(item.get("wxxm_zt").getAsString());
+				yuyueWxxmEntity.setWxxm_khgs(item.get("wxxm_gs").getAsDouble());
+				Work_yuyue_wxxmEntity newYuyue = dao.insert(yuyueWxxmEntity);
+				if (newYuyue == null) {
+                    return "fail";
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			return "失败";
+            return "fail";
 		}
-
-		return "存档成功";
+        return "success";
 	}
 
 	/**
 	 * 添加材料
-	 * 
-	 * @param json
 	 * @return
 	 */
 	@At
 	@Ok("raw:json")
-	public String addcail(String json) {
+	public String addcail(String addLists) {
 		JsonParser parse = new JsonParser(); // 创建json解析器
 		try {
-			JsonObject js = (JsonObject) parse.parse(json); // 创建jsonObject对象
-			JsonArray array = js.get("data").getAsJsonArray();
+            String yuyueNo = "";
+            JsonArray array = (JsonArray) parse.parse(addLists);
 			for (int i = 0; i < array.size(); i++) {
-				Work_yuyue_llEntity yuyue = new Work_yuyue_llEntity();
-				JsonObject subObject = array.get(i).getAsJsonObject();
-				String nu = subObject.get("yuyue_no").getAsString();
-				yuyue.setYuyue_no(subObject.get("yuyue_no").getAsString());
-				if (i == 0) {
-					// dao.query(Work_yuyue_wxxmEntity.class,
-					// Cnd.where("yuyue_no","=",nu));
-					Work_yuyue_llEntity ks = dao.fetch(
-							Work_yuyue_llEntity.class,
-							Cnd.where("yuyue_no", "=", nu));
-					if (ks != null) {
-
-						dao.clear(Work_yuyue_llEntity.class,
-								Cnd.where("yuyue_no", "=", nu));
-					}
-				}
-				yuyue.setPeij_no(subObject.get("peij_no").getAsString());// 配件编码
-				yuyue.setPeij_mc(subObject.get("peij_mc").getAsString());// 配件名称
-				yuyue.setPeij_sl(subObject.get("peij_sl").getAsDouble());// 配件数量
-				yuyue.setPeij_dj(subObject.get("peij_dj").getAsDouble());// 配件单价
-				yuyue.setPeij_zt(subObject.get("peij_zt").getAsString());// 配件状态
-				yuyue.setPeij_je(subObject.get("peij_je").getAsDouble());// 配件金额
-				yuyue.setPeij_th(subObject.get("peij_th").getAsString());// 配件图号
-				yuyue.setPeij_dw(subObject.get("peij_dw").getAsString());// 配件单位
-				Work_yuyue_llEntity dd = dao.insert(yuyue);
-				if (dd == null) {
-					return "失败";
-				}
+				Work_yuyue_llEntity yuyueLlEntity = new Work_yuyue_llEntity();
+				JsonObject item = array.get(i).getAsJsonObject();
+                yuyueNo = item.get("yuyue_no").getAsString();
+                String peijNo = item.get("peij_no").getAsString();
+                Work_yuyue_llEntity entity = dao.fetch(Work_yuyue_llEntity.class, Cnd.where("yuyue_no", "=", yuyueNo).and("peij_no", "=", peijNo));
+                if (entity == null) {
+                    yuyueLlEntity.setYuyue_no(item.get("yuyue_no").getAsString());
+                    yuyueLlEntity.setPeij_no(item.get("peij_no").getAsString());// 配件编码
+                    yuyueLlEntity.setPeij_mc(item.get("peij_mc").getAsString());// 配件名称
+                    yuyueLlEntity.setPeij_sl(item.get("peij_sl").getAsDouble());// 配件数量
+                    yuyueLlEntity.setPeij_dj(item.get("peij_dj").getAsDouble());// 配件单价
+                    yuyueLlEntity.setPeij_zt(item.get("peij_zt").getAsString());// 配件状态
+                    yuyueLlEntity.setPeij_je(item.get("peij_je").getAsDouble());// 配件金额
+                    yuyueLlEntity.setPeij_th(item.get("peij_th").getAsString());// 配件图号
+                    yuyueLlEntity.setPeij_dw(item.get("peij_dw").getAsString());// 配件单位
+                    Work_yuyue_llEntity dd = dao.insert(yuyueLlEntity);
+                    if (dd == null) {
+                        return "fail";
+                    }
+                } else {
+                    if (entity.getPeij_sl() + item.get("peij_sl").getAsDouble() != 0) {
+                        Sql sqlUpdate = Sqls
+                                .create("update work_yuyue_ll set peij_sl = peij_sl + " + item.get("peij_sl").getAsDouble() + ",peij_je = peij_je + " + item.get("peij_je").getAsDouble() + " where yuyue_no='" + yuyueNo + "' and peij_no ='" + peijNo + "'");
+                        dao.execute(sqlUpdate);
+                    } else {
+                        Sql sqlDelete = Sqls
+                                .create("delete from work_yuyue_ll where yuyue_no='" + yuyueNo + "' and peij_no ='" + peijNo + "'");
+                        dao.execute(sqlDelete);
+                    }
+                }
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			return "失败";
+            return "fail";
 		}
-
-		return "存档成功";
+        return "success";
 	}
 
 	
