@@ -1354,18 +1354,9 @@ public class publicModule{
 	 */
 	@At
 	@Ok("raw:json")
-	public String pinpai(String order){
-		List<Sm_peijcx_newEntity> result;
-		if (order != "" || order != null) {
-			result = dao.query(Sm_peijcx_newEntity.class,
+	public String pinpai(){
+		List<Sm_peijcx_newEntity> result = dao.query(Sm_peijcx_newEntity.class,
 					Cnd.where("che_level", "=", "1").asc("chex_qz"));
-		} else {
-			result = dao.query(
-					Sm_peijcx_newEntity.class,
-					Cnd.where("che_level", "=", "1").and("chex_order", "=",
-							order).asc("chex_qz"));
-		}
-
 		String json = Json.toJson(result, JsonFormat.full());
 		if (result.size() != 0) {
 			return jsons.json(1, result.size(), 1, json);

@@ -208,19 +208,19 @@ public class card {
 					List<Record> res1 = sql1.getList(Record.class);
 					int cnt = res1.get(0).getInt("cnt");
 					if (cnt == 0)  
-						return jsons.json(1, 1, 0,
-								"系统设置为“关联式会员制度”，此会员卡非该辆车所有,不符合条件。不能结算");
+						return jsons.json(1, 1, 0, "系统设置为“关联式会员制度”，此会员卡非该辆车所有,不符合条件。不能结算");
 				}
 			}
-		}
-		// 把che_no和kehu_no也返回去
-		Sql sql1 = Sqls
-				.queryRecord("select che_no,kehu_no,CardKind.ItemRate,CardKind.PeijRate,card_leftje from kehu_card ,CardKind where kehu_card.card_no ='"
-						+ card_no + "' and card_kind = CardKind.cardkind;");
-		dao.execute(sql1);
-		List<Record> res1 = sql1.getList(Record.class);
-		String json = Json.toJson(res1, JsonFormat.full());
-		return jsons.json(1, 1, 1, json);
+            // 把che_no和kehu_no也返回去
+            Sql sql1 = Sqls.queryRecord("select a.che_no,a.kehu_no,b.ItemRate,b.PeijRate,a.card_leftje " +
+                    "from kehu_card a,CardKind b where a.card_kind = b.cardkind and a.card_no ='" + card_no + "'");
+            dao.execute(sql1);
+            List<Record> res1 = sql1.getList(Record.class);
+            String json = Json.toJson(res1.get(0), JsonFormat.full());
+            return jsons.json(1, 1, 1, json);
+		} else {
+            return jsons.json(1, 1, 0, "不存在此会员卡！");
+        }
 	}
 
 	/**
@@ -386,7 +386,6 @@ public class card {
                 kehuCarddetailpeij.setDate_create(new Date());
                 dao.insert(kehuCarddetailpeij);
             }
-
             Sql sql1 = Sqls
                     .create("update kehu_card set card_yhje= isnull(card_ysje,0)-isnull(card_ssje,0), card_useje=0,card_leftje= card_addje,card_usejf=0 ,card_leftjf = card_jifen,card_usecs_jx=0,card_leftcs_jx= isnull(card_cs_jx,0), card_usecs_px=0,card_leftcs_px= isnull(card_cs,0) where card_no = '"
                             + cardNo + "'");
