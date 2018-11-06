@@ -487,7 +487,6 @@ public class ordersModule {
     /**
      * 添加基本信息
      *
-     * @param yuyue_no
      * @return
      */
     @At
@@ -986,4 +985,35 @@ public class ordersModule {
         return "success";
     }
 
+    /**
+     * 更改维修项目折扣
+     * @param work_no
+     * @param wxxm_zk
+     * @return
+     */
+    @At
+    @Ok("raw:json")
+    public String updateWxxmZk(String work_no, String wxxm_zk) {
+        Sql sql = Sqls
+                .create("update work_mx_gz set wxxm_zk=" + wxxm_zk + ",wxxm_je=wxxm_yje*" + wxxm_zk + ",wxxm_dj=wxxm_yje*" + wxxm_zk + "/(case wxxm_gs when 0 then 1 else wxxm_gs end) where work_no = '" + work_no + "'");
+        dao.execute(sql);
+        BsdUtils.updateWorkPzGz(dao, work_no);
+        return "success";
+    }
+
+    /**
+     * 更改维修材料折扣
+     * @param work_no
+     * @param wxcl_zk
+     * @return
+     */
+    @At
+    @Ok("raw:json")
+    public String updateWxclZk(String work_no, String wxcl_zk) {
+        Sql sql = Sqls
+                .create("update work_ll_gz set peij_zk=" + wxcl_zk + ",peij_je=peij_yje*" + wxcl_zk + ",peij_dj=peij_yje*" + wxcl_zk + "/peij_sl where work_no = '" + work_no + "'");
+        dao.execute(sql);
+        BsdUtils.updateWorkPzGz(dao, work_no);
+        return "success";
+    }
 }
