@@ -98,22 +98,15 @@ public class KuaixiuModule {
      */
     @At
     @Ok("raw:json")
-    public String addMrkxJbxx(@Param("gongsiNo") final String gongsiNo,
+    public String addMrkxJbxx(@Param("gongsiNo") String gongsiNo,
                               @Param("caozuoyuan_xm") final String caozuoyuan_xm,
                               @Param("..") Work_pz_gzEntity pz) {
-        if (gongsiNo == null || gongsiNo == "") {
+        if (gongsiNo == null || "".equals(gongsiNo)) {
             Sql sql = Sqls
                     .queryRecord(" select gongsino from sm_caozuoyuan where caozuoyuan_xm='" + caozuoyuan_xm + "'");
             dao.execute(sql);
             List<Record> res = sql.getList(Record.class);
-            String gongsino = res.get(0).getString("gongsino");
-            Sql sql0 = Sqls
-                    .queryRecord("update work_pz_gz set gongsino='" + gongsino + "'where work_no='" + pz.getWork_no() + "'");
-            dao.execute(sql0);
-        } else {
-            Sql sql0 = Sqls
-                    .queryRecord("update work_pz_gz set gongsino='" + gongsiNo + "'where work_no='" + pz.getWork_no() + "'");
-            dao.execute(sql0);
+            gongsiNo = res.get(0).getString("gongsino");
         }
         Work_cheliang_smEntity che = pu.saveCheInfo(pz.getChe_no(), pz.getGcsj(), pz.getChe_cx(),
                 pz.getChe_vin(), pz.getGongSiNo());
@@ -123,11 +116,9 @@ public class KuaixiuModule {
             pz.setWork_no(num);
         }
         pz.setXche_jsrq(new Date());
-        pz.setFlag_fast(true);
-        pz.setMainstate(-1);
         pz.setGongSiNo(gongsiNo);
         //int nu = dao.updateIgnoreNull(pz);
-        dao.update(pz, "^xche_bz|kehu_dh|kehu_mc|gongsiNo|caozuoyuan_xm|cangk_dm|che_no|che_cx|che_vin|xche_lc|kehu_mc|kehu_dh|card_no|kehu_no|xche_jsrq|flag_fast|mainstate|xche_jsrq|flag_fast|mainstate$");
+        dao.update(pz, "^xche_bz|kehu_dh|kehu_mc|GongSiNo|xche_jsr|cangk_dm|che_no|che_cx|che_vin|xche_lc|kehu_mc|kehu_dh|card_no|kehu_no|xche_jsrq|flag_fast|mainstate|xche_jsrq|flag_fast|mainstate$");
 
         Work_pz_gzEntity pp = dao.fetch(Work_pz_gzEntity.class, pz.getWork_no());
 
