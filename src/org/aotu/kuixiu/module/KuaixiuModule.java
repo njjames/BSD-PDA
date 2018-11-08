@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.net.URLConnection;
 import java.sql.CallableStatement;
@@ -31,6 +32,7 @@ import org.aotu.VIPcard.module.card;
 import org.aotu.lswx.entity.Work_pz_sjEntity;
 import org.aotu.offer.entity.feilvEntity;
 import org.aotu.order.entity.Work_ll_gzEntity;
+import org.aotu.order.entity.Work_mx_gzEntity;
 import org.aotu.order.entity.Work_pz_gzEntity;
 import org.aotu.publics.eneity.KehuEntity;
 import org.aotu.publics.eneity.Work_cheliang_smEntity;
@@ -101,37 +103,27 @@ public class KuaixiuModule {
     public String addMrkxJbxx(@Param("gongsiNo") String gongsiNo,
                               @Param("caozuoyuan_xm") final String caozuoyuan_xm,
                               @Param("..") Work_pz_gzEntity pz) {
-        if (gongsiNo == null || "".equals(gongsiNo)) {
+        if (pz.getGongSiNo() == null || "".equals(pz.getGongSiNo())) {
             Sql sql = Sqls
                     .queryRecord(" select gongsino from sm_caozuoyuan where caozuoyuan_xm='" + caozuoyuan_xm + "'");
             dao.execute(sql);
             List<Record> res = sql.getList(Record.class);
-            gongsiNo = res.get(0).getString("gongsino");
+            pz.setGongSiNo(res.get(0).getString("gongsino"));
         }
+        pz.setXche_jsrq(new Date());
+        dao.update(pz, "^che_no|che_cx|che_vin|kehu_no|kehu_mc|kehu_dh|xche_sfbz|xche_bz|xche_jsr|xche_lc|xche_jsrq|card_no|GongSiNo|cangk_dm$");
         Work_cheliang_smEntity che = pu.saveCheInfo(pz.getChe_no(), pz.getGcsj(), pz.getChe_cx(),
                 pz.getChe_vin(), pz.getGongSiNo());
         pu.saveKeHu(che.getKehu_no(), pz.getKehu_mc(), pz.getKehu_dh());
-        if (pz.getWork_no() == null) {
-            String num = add(gongsiNo, caozuoyuan_xm);
-            pz.setWork_no(num);
-        }
-        pz.setXche_jsrq(new Date());
-        pz.setGongSiNo(gongsiNo);
-        //int nu = dao.updateIgnoreNull(pz);
-        dao.update(pz, "^xche_bz|kehu_dh|kehu_mc|GongSiNo|xche_jsr|cangk_dm|che_no|che_cx|che_vin|xche_lc|kehu_mc|kehu_dh|card_no|kehu_no|xche_jsrq|flag_fast|mainstate|xche_jsrq|flag_fast|mainstate$");
 
-        Work_pz_gzEntity pp = dao.fetch(Work_pz_gzEntity.class, pz.getWork_no());
-
-        dao.update(Work_ll_gzEntity.class, Chain.make("cangk_dm", pp.getCangk_dm()), Cnd.where("Work_no", "=", pz.getWork_no()));
-        Sql sql0_1 = Sqls
-                .queryRecord(" select  Card_JifenType from cardsysset");
-        dao.execute(sql0_1);
-        List<Record> res = sql0_1.getList(Record.class);
-        String Card_JifenType = res.get(0).getString("Card_JifenType");
-        //历史系数没有修改新增修改历史系数2018年2月5日15:45:33
+        dao.update(Work_ll_gzEntity.class, Chain.make("cangk_dm", pz.getCangk_dm()), Cnd.where("Work_no", "=", pz.getWork_no()));
         Sql sql0_8 = Sqls
                 .create("update work_ll_gz set danwei_bs_ls =  1 where  work_no = '" + pz.getWork_no() + "' and  danwei_bs_ls = 0 ");
         dao.execute(sql0_8);
+        Sql sql0_1 = Sqls.queryRecord("select Card_JifenType from cardsysset");
+        dao.execute(sql0_1);
+        List<Record> res = sql0_1.getList(Record.class);
+        String Card_JifenType = res.get(0).getString("Card_JifenType");
         if ("false".equals(Card_JifenType)) {
             Sql sql0_2 = Sqls
                     .create("update b set b.peij_jifenlv=isnull(a.peij_shlv,0) from kucshp_info a ,work_ll_gz b where work_no='" + pz.getWork_no() + "' and a.peij_no=b.peij_no");
@@ -139,20 +131,23 @@ public class KuaixiuModule {
             Sql sql0_3 = Sqls
                     .create("update work_ll_gz set peij_jifen=isnull(peij_jifenlv,0)*isnull(peij_je,0) where work_no='" + pz.getWork_no() + "'");
             dao.execute(sql0_3);
-            Sql sql0_4 = Sqls
-                    .queryRecord("select sum(peij_jifen) jifen from work_ll_gz where work_no='" + pz.getWork_no() + "' and peij_zt='正常' ");
-            dao.execute(sql0_4);
-            List<Record> res4 = sql0_4.getList(Record.class);
-            String CardJiFen = res4.get(0).getString("jifen");
-            Sql sql0_5 = Sqls
-                    .create("update work_pz_gz set work_jifen_sum= " + CardJiFen + " where work_no='" + pz.getWork_no() + "'");
-            dao.execute(sql0_5);
-        }
+            BigDecimal pjJF = (BigDecimal) dao.func2(Work_ll_gzEntity.class, "sum", "peij_jifen",
+                    Cnd.where("work_no", "=", pz.getWork_no()).and("peij_zt", "=", "正常"));
 
-        ////////////////////合计金额计算///////////////////////////////////
+            Sql sql0_4 = Sqls
+                    .create("update b set b.wxxm_jifenlv=isnull(a.wxxm_jifenlv,0) from work_weixiu_sm a ,work_mx_gz b where work_no='" + pz.getWork_no() + "' and a.wxxm_no=b.wxxm_no");
+            dao.execute(sql0_4);
+            Sql sql0_5 = Sqls
+                    .create("update work_mx_gz set wxxm_jifen=isnull(wxxm_jifenlv,0)*isnull(wxxm_je,0) where work_no='" + pz.getWork_no() + "'");
+            dao.execute(sql0_5);
+            BigDecimal xmJF = (BigDecimal) dao.func2(Work_mx_gzEntity.class, "sum", "wxxm_jifen",
+                    Cnd.where("work_no", "=", pz.getWork_no()).and("wxxm_zt", "=", "正常"));
+            Sql sql0_6 = Sqls
+                    .create("update work_pz_gz set work_jifen_sum= " + pjJF.add(xmJF) + " where work_no='" + pz.getWork_no() + "'");
+            dao.execute(sql0_6);
+        }
         BsdUtils.updateWorkPzGz(dao, pz.getWork_no());
-        ///////////////////////////////////////////////////////////////
-        return jsons.json(1, 1, 1, "保存成功");
+        return "success";
     }
 
     /**

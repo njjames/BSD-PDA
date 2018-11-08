@@ -847,7 +847,7 @@ public class ordersModule {
      */
     @At
     @Ok("raw:json")
-    public String addNewWxxm(String addLists) {
+    public String addNewWxxm(String addLists, String card_no) {
         JsonParser parse = new JsonParser(); // 创建json解析器
         try {
             String workNo = "";
@@ -856,26 +856,17 @@ public class ordersModule {
                 Work_mx_gzEntity workMxGzEntity = new Work_mx_gzEntity();
                 JsonObject item = array.get(i).getAsJsonObject();
                 workNo = item.get("work_no").getAsString();
+                String wxxm_no = item.get("wxxm_no").getAsString();
                 workMxGzEntity.setWork_no(workNo);
+                workMxGzEntity.setWxxm_no(wxxm_no);
                 workMxGzEntity.setWxxm_yje(item.get("wxxm_je").getAsDouble());
-                workMxGzEntity.setWxxm_no(item.get("wxxm_no").getAsString());
                 workMxGzEntity.setWxxm_mc(item.get("wxxm_mc").getAsString());
                 workMxGzEntity.setWxxm_gs(item.get("wxxm_gs").getAsDouble());
-                workMxGzEntity.setWxxm_je(item.get("wxxm_je").getAsDouble());
-                workMxGzEntity.setWxxm_tpye(item.get("wxxm_Tpye").getAsString());
-                workMxGzEntity.setWxxm_zt(item.get("wxxm_zt").getAsString());
                 workMxGzEntity.setWxxm_khgs(item.get("wxxm_gs").getAsDouble());
-                if (item.get("wxxm_gs") != null)
-                    workMxGzEntity.setWxxm_gs(item.get("wxxm_gs").getAsDouble()); // --标准工时
-                if (item.get("wxxm_dj") != null)
-                    workMxGzEntity.setWxxm_dj(item.get("wxxm_dj").getAsDouble()); // --单价
-                if (item.get("wxxm_yje") != null)
-                    workMxGzEntity.setWxxm_yje(item.get("wxxm_yje").getAsDouble());// --原工时费，
-                // 默认价格要取到这个字段了
-                if (item.get("wxxm_zk") != null)
-                    workMxGzEntity.setWxxm_zk(item.get("wxxm_zk").getAsDouble()); // --会员折扣
-                if (item.get("wxxm_je") != null)
-                    workMxGzEntity.setWxxm_je(item.get("wxxm_je").getAsDouble()); // --会员工时费
+                workMxGzEntity.setWxxm_yje(item.get("wxxm_yje").getAsDouble());// --原工时费，
+                workMxGzEntity.setWxxm_je(item.get("wxxm_je").getAsDouble());
+                workMxGzEntity.setWxxm_tpye(item.get("wxxm_tpye").getAsString());
+                workMxGzEntity.setWxxm_zt(item.get("wxxm_zt").getAsString());
                 if (workMxGzEntity.getWxxm_gs() == 0) {
                     workMxGzEntity.setWxxm_dj(workMxGzEntity.getWxxm_je());
                 } else {
@@ -886,20 +877,11 @@ public class ordersModule {
                 if (newWxxm == null) {
                     return "fail";
                 }
+                if (card_no != null && !card_no.equals("")) {
+                    pu.updateOneWxxmPriceByCard(wxxm_no, card_no, workNo);
+                }
             }
-            ////////////////////合计金额计算///////////////////////////////////
-            Sql sql1_1 = Sqls
-                    .create("update b set b.xche_rgf = a.xche_rgf,b.xche_rgbh=a.xche_rgf,b.xche_rgsl=0,xche_rgse=0 from work_pz_gz b,(select work_no,sum(wxxm_je) xche_rgf from work_mx_gz where work_no='" + workNo + "' and wxxm_zt in ('正常','保险') group by work_no) a   where b.work_no = '" + workNo + "' and a.work_no = b.work_no");
-            dao.execute(sql1_1);
-            Sql sql1_2 = Sqls
-                    .create("update b set b.xche_clf = a.xche_clf,b.xche_clbh=a.xche_clf,b.xche_clsl=0,xche_clse=0 from work_pz_gz b,(select work_no,sum(peij_je) xche_clf from work_ll_gz where work_no='" + workNo + "' and peij_zt in ('正常','保险')group by work_no ) a   where b.work_no = '" + workNo + "' and a.work_no = b.work_no");
-            dao.execute(sql1_2);
-            Sql sql1_3 = Sqls
-                    .create("update work_pz_gz set xche_yhje = isnull(xche_wxxm_yhje,0)+isnull(xche_peij_yhje,0) where work_no = '" + workNo + "'");
-            dao.execute(sql1_3);
-            Sql sql1_4 = Sqls
-                    .create("update work_pz_gz set xche_hjje= isnull(xche_rgf,0) + isnull(xche_clf,0) where work_no = '" + workNo + "'");
-            dao.execute(sql1_4);
+            BsdUtils.updateWorkPzGz(dao, workNo);
         } catch (Exception e) {
             e.printStackTrace();
             return "fail";
@@ -909,13 +891,12 @@ public class ordersModule {
 
     /**
      * 添加材料
-     *
-     * @param json
      * @return
      */
     @At
     @Ok("raw:json")
-    public String addNewWxcl(String addLists) {
+    public String addNewWxcl(String addLists, String card_no) {
+        boolean isExist = true;
         JsonParser parse = new JsonParser(); // 创建json解析器
         try {
             String workNo = "";
@@ -934,20 +915,12 @@ public class ordersModule {
                     workLlGzEntity.setPeij_mc(item.get("peij_mc").getAsString());// 配件名称
                     workLlGzEntity.setPeij_sl(item.get("peij_sl").getAsDouble());// 配件数量
                     workLlGzEntity.setPeij_dj(item.get("peij_dj").getAsDouble());// 配件单价
-                    workLlGzEntity.setPeij_zt(item.get("peij_zt").getAsString());// 配件状态
                     workLlGzEntity.setPeij_je(item.get("peij_je").getAsDouble());// 配件金额
                     workLlGzEntity.setPeij_th(item.get("peij_th").getAsString());// 配件图号
+                    workLlGzEntity.setPeij_ydj(item.get("peij_ydj").getAsDouble()); // --原单价
+                    workLlGzEntity.setPeij_zk(item.get("peij_zk").getAsDouble()); // --会员折扣
                     workLlGzEntity.setPeij_dw(item.get("peij_dw").getAsString());// 配件单位
-                    //yuyue.setPeij_ry(subObject.get("peij_ry").getAsString());//配件领料人
-                    if (item.get("peij_ydj") != null)
-                        workLlGzEntity.setPeij_ydj(item.get("peij_ydj").getAsDouble()); // --原单价
-                    // 默认价格到这字个字段上
-                    if (item.get("peij_zk") != null)
-                        workLlGzEntity.setPeij_zk(item.get("peij_zk").getAsDouble()); // --会员折扣
-                    if (item.get("peij_dj") != null)
-                        workLlGzEntity.setPeij_dj(item.get("peij_dj").getAsDouble()); // --单价
-                    if (item.get("peij_je") != null)
-                        workLlGzEntity.setPeij_je(item.get("peij_je").getAsDouble()); // --金额
+                    workLlGzEntity.setPeij_zt(item.get("peij_zt").getAsString());// 配件状态
                     Work_ll_gzEntity dd = dao.insert(workLlGzEntity);
                     if (dd == null) {
                         return "fail";
@@ -961,23 +934,16 @@ public class ordersModule {
                         Sql sqlDelete = Sqls
                                 .create("delete from work_ll_gz where work_no='" + workNo + "' and peij_no ='" + peijNo + "'");
                         dao.execute(sqlDelete);
+                        isExist = false;
+                    }
+                }
+                if (isExist) {
+                    if (card_no != null && !card_no.equals("")) {
+                        pu.updateOneWxclPriceByCard(peijNo, card_no, workNo);
                     }
                 }
             }
-            ////////////////////合计金额计算///////////////////////////////////
-            Sql sql1_1 = Sqls
-                    .create("update b set b.xche_rgf = a.xche_rgf,b.xche_rgbh=a.xche_rgf,b.xche_rgsl=0,xche_rgse=0 from work_pz_gz b,(select work_no,sum(wxxm_je) xche_rgf from work_mx_gz where work_no='" + workNo + "' and wxxm_zt in ('正常','保险') group by work_no) a   where b.work_no = '" + workNo + "' and a.work_no = b.work_no");
-            dao.execute(sql1_1);
-            Sql sql1_2 = Sqls
-                    .create("update b set b.xche_clf = a.xche_clf,b.xche_clbh=a.xche_clf,b.xche_clsl=0,xche_clse=0 from work_pz_gz b,(select work_no,sum(peij_je) xche_clf from work_ll_gz where work_no='" + workNo + "' and peij_zt in ('正常','保险')group by work_no ) a   where b.work_no = '" + workNo + "' and a.work_no = b.work_no");
-            dao.execute(sql1_2);
-            Sql sql1_3 = Sqls
-                    .create("update work_pz_gz set xche_yhje = isnull(xche_wxxm_yhje,0)+isnull(xche_peij_yhje,0) where work_no = '" + workNo + "'");
-            dao.execute(sql1_3);
-            Sql sql1_4 = Sqls
-                    .create("update work_pz_gz set xche_hjje= isnull(xche_rgf,0) + isnull(xche_clf,0) where work_no = '" + workNo + "'");
-            dao.execute(sql1_4);
-            ///////////////////////////////////////////////////////////////
+            BsdUtils.updateWorkPzGz(dao, workNo);
         } catch (Exception e) {
             e.printStackTrace();
             return "fail";
