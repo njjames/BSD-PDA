@@ -54,6 +54,7 @@ import org.aotu.publics.eneity.Work_weixiu_flEntity;
 import org.aotu.publics.eneity.Work_weixiu_fsEntity;
 import org.aotu.publics.eneity.Work_weixiu_smEntity;
 import org.aotu.user.entity.userEntity;
+import org.aotu.util.BsdUtils;
 import org.aotu.util.UploadFileUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
@@ -2190,7 +2191,6 @@ public class publicModule {
 	}*/
 
     /**
-     * @param chex_mc_std 模糊获取工作人员
      * @throws Exception
      * @author LHW
      * @time
@@ -2247,19 +2247,43 @@ public class publicModule {
     }
 
     /**
+     * 把会员卡的信息移除
+     */
+    @At
+    @Ok("raw:json")
+    public String removeBillByCard(String work_no) {
+        // 把会员卡更新到pz表上
+        Sql sql = Sqls.create("update work_pz_gz set card_no='',card_kind='',card_itemrate=0,card_peijrate='' where work_no = '" + work_no + "'");
+        dao.execute(sql);
+        // 更新维修项目
+        updateWxxmPriceByCard("", work_no);
+        // 更新维修用料
+        updateWxclPriceByCard("", work_no);
+        return "success";
+    }
+
+    /**
      * 更新维修用料中会员卡有特殊处理的价格
      */
     @At
     @Ok("raw:json")
     private String updateWxclPriceByCard(String card_no, String work_no) {
-        // 获取当前的维修用料
-        Sql sql = Sqls.queryRecord("select peij_no from work_ll_gz where work_no = '" + work_no + "'");
-        dao.execute(sql);
-        List<Record> wxclList = sql.getList(Record.class);
-        // 遍历当前的维修项目
-        for (Record aWxclList : wxclList) {
-            String peij_no = aWxclList.getString("peij_no");
-            updateOneWxclPriceByCard(peij_no, card_no, work_no);
+        // 如果会员卡存在，则按照会员卡修改折扣和金额
+        if (card_no != null && !card_no.equals("")) {
+            // 获取当前的维修用料
+            Sql sql = Sqls.queryRecord("select peij_no from work_ll_gz where work_no = '" + work_no + "'");
+            dao.execute(sql);
+            List<Record> wxclList = sql.getList(Record.class);
+            // 遍历当前的维修项目
+            for (Record aWxclList : wxclList) {
+                String peij_no = aWxclList.getString("peij_no");
+                updateOneWxclPriceByCard(peij_no, card_no, work_no);
+            }
+        } else { // 如果没有会员卡，则修改折扣为1
+            Sql sql = Sqls
+                    .create("update work_ll_gz set peij_zk=1,peij_je=peij_yje,peij_dj=peij_yje/(case peij_sl when 0 then 1 else peij_sl end) where work_no = '" + work_no + "'");
+            dao.execute(sql);
+            BsdUtils.updateWorkPzGz(dao, work_no);
         }
         return "success";
     }
@@ -2344,19 +2368,26 @@ public class publicModule {
     }
 
     /**
-     * 更新维修项目中会员卡有特殊处理的价格
+     * 更新维修项目价格
      */
     @At
     @Ok("raw:json")
     public String updateWxxmPriceByCard(String card_no, String work_no) {
-        // 获取当前的维修项目
-        Sql sql = Sqls.queryRecord("select wxxm_no from work_mx_gz where work_no = '" + work_no + "'");
-        dao.execute(sql);
-        List<Record> wxxmList = sql.getList(Record.class);
-        // 遍历当前的维修项目
-        for (Record aWxxmList : wxxmList) {
-            String wxxm_no = aWxxmList.getString("wxxm_no");
-            updateOneWxxmPriceByCard(wxxm_no, card_no, work_no);
+        if (card_no != null && !card_no.equals("")) {
+            // 获取当前的维修项目
+            Sql sql = Sqls.queryRecord("select wxxm_no from work_mx_gz where work_no = '" + work_no + "'");
+            dao.execute(sql);
+            List<Record> wxxmList = sql.getList(Record.class);
+            // 遍历当前的维修项目
+            for (Record aWxxmList : wxxmList) {
+                String wxxm_no = aWxxmList.getString("wxxm_no");
+                updateOneWxxmPriceByCard(wxxm_no, card_no, work_no);
+            }
+        } else {
+            Sql sql = Sqls
+                    .create("update work_mx_gz set wxxm_zk=1,wxxm_je=wxxm_yje,wxxm_dj=wxxm_yje/(case wxxm_gs when 0 then 1 else wxxm_gs end) where work_no = '" + work_no + "'");
+            dao.execute(sql);
+            BsdUtils.updateWorkPzGz(dao, work_no);
         }
         return "success";
     }

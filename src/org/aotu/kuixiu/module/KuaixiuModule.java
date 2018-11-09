@@ -1620,6 +1620,39 @@ public class KuaixiuModule {
         }
     }
 
+    /**
+     * 获取结算信息
+     * 会员卡剩余金额，维修优惠金额，材料优惠金额
+     */
+    @At
+    @Ok("raw:json")
+    public String getBillJieSuanInfo(String card_no, String work_no) {
+        HashMap<String, String> map = new HashMap<>();
+        Sql sql = Sqls.queryRecord("select xche_wxxm_yhje,xche_peij_yhje,xche_hjje from work_pz_gz where work_no='" + work_no + "'");
+        dao.execute(sql);
+        List<Record> list = sql.getList(Record.class);
+        if (list.size() > 0) {
+            map.put("xche_wxxm_yhje", list.get(0).getString("xche_wxxm_yhje"));
+            map.put("xche_peij_yhje", list.get(0).getString("xche_peij_yhje"));
+            map.put("xche_hjje", list.get(0).getString("xche_hjje"));
+        }
+        if (card_no != null && card_no.length() > 0) {
+            Sql sql1 = Sqls.queryRecord("select card_leftje from kehu_card where card_no='" + card_no + "'");
+            dao.execute(sql1);
+            List<Record> list1 = sql1.getList(Record.class);
+            if (list1.size() > 0) {
+                map.put("card_leftje", list1.get(0).getString("card_leftje"));
+            }
+        } else {
+            map.put("card_leftje", "0");
+        }
+        if (map.size() > 0) {
+            String json = Json.toJson(map);
+            return jsons.json(1, 1, 1, json);
+        }
+        return jsons.json(1, 1, 0, "");
+
+    }
 }
 		
 	
