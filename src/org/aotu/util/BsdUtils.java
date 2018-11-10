@@ -1,5 +1,6 @@
 package org.aotu.util;
 
+import org.aotu.user.entity.userEntity;
 import org.nutz.dao.Dao;
 import org.nutz.dao.Sqls;
 import org.nutz.dao.entity.Record;
@@ -63,5 +64,21 @@ public class BsdUtils {
         Sql sql1_4 = Sqls
                 .create("update work_pz_gz set xche_hjje= isnull(xche_rgf,0) + isnull(xche_clf,0) where work_no = '" + work_no + "'");
         dao.execute(sql1_4);
+    }
+
+    /**
+     * 是否有某个权限
+     * @param caozuoyuanGndm 权限列表
+     * @param qxName 权限代码
+     * @return true表示有，false表示没有
+     */
+    public static boolean isHasQx(String caozuoyuanGndm, String qxName) {
+        String[] qxs = caozuoyuanGndm.split(",");
+        for (String qx : qxs) {
+            if (qx.equals(qxName)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

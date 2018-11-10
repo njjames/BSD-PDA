@@ -413,6 +413,25 @@ public class card {
 		return jsons.json(1, result.size(), 0, json);
 
 	}
-	
+
+	/**
+	 * 卡信息
+	 *
+	 * @return
+	 */
+	@At
+	@Ok("raw:json")
+	public String checkCardPass(String card_no, String card_pass) {
+        Sql sql = Sqls.queryRecord("select isnull(card_password,'') card_password from kehu_card where card_no='" + card_no + "'");
+        dao.execute(sql);
+        List<Record> list = sql.getList(Record.class);
+        if (list.size() > 0) {
+            if (list.get(0).getString("card_password").equals(card_pass)) {
+                return "success";
+            }
+        }
+		return "fail";
+
+	}
 
 }

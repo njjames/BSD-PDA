@@ -405,6 +405,98 @@ public class KuaixiuModule {
     }
 
     /**
+     * 结算之前的检测
+     * @param work_no
+     * @param caozuoyuanID
+     * @return
+     */
+    @At
+    @Ok("raw:json")
+    public String checkBeforeJiesuan(String work_no, int caozuoyuanID) {
+        userEntity user = dao.fetch(userEntity.class, caozuoyuanID);
+        // 判断是否有美容快修单的权限
+        if (!BsdUtils.isHasQx(user.getCaozuoyuan_Gndm(), "2425")) {
+            return jsons.json(1, 1, 0, "您没有【快修单结算】的权限！");
+        }
+        List<String> tipLists = new ArrayList<>();
+        Sql sql1 = Sqls.queryRecord("select count(*) as cnt from work_ckpz_gz where work_no= '" + work_no + "'");
+        dao.execute(sql1);
+        List<Record> res1 = sql1.getList(Record.class);
+        int cnt = res1.get(0).getInt("cnt");
+        if (cnt > 0) {
+            return jsons.json(1, 1, 0, "不能结算，该车尚有耗材未出库，请库房确认出库");
+        }
+        // 下面这个权限的情况是：有权限就不用查询了，没有权限就查询；所以先判断权限在查询
+        // 判断是否有出库的权限
+        if (!BsdUtils.isHasQx(user.getCaozuoyuan_Gndm(), "2408")) {
+            Sql sql = Sqls.queryRecord("select count(*) as cnt from work_ll_gz where work_no='" + work_no + "' and flag_chuku=0 and isnull(flag_xz,0)=0");
+            dao.execute(sql);
+            List<Record> res2 = sql.getList(Record.class);
+            int cnt3 = res2.get(0).getInt("cnt");
+            if (cnt3 > 0) {
+                return jsons.json(1, 1, 0, "您没有【配件出库】的权限！");
+            }
+        }
+        // 下面这个权限的情况是：不管有没有权限都要查询，也就是有权限给提示，没有权限给拒绝；所以先查询再判断权限
+        // 判断是否有负库存出库的权限
+        Sql sql2 = Sqls
+                .queryRecord("select count(*) as cnt from work_ll_gz where peij_sl>peij_kc and flag_chuku = 0 and isnull(flag_xz,0)=0 and work_no= '" + work_no + "'");
+        dao.execute(sql2);
+        List<Record> res2 = sql2.getList(Record.class);
+        int cnt2 = res2.get(0).getInt("cnt");
+        if (cnt2 > 0) {
+            // 判断是否有负库存出库的权限
+            if (BsdUtils.isHasQx(user.getCaozuoyuan_Gndm(), "2410")) {
+                tipLists.add("配件出库数量大于库存数量");
+            } else {
+                return jsons.json(1, 1, 0, "您没有【负库存出库】的权限！");
+            }
+        }
+        // 判断是否有允许维修出库价低于库存均价
+        Sql sql3 = Sqls.queryRecord("select count(*) as cnt from work_ll_gz a ,kucshp_fl b where a.work_no = '"
+                        + work_no + "' and a.peij_no = b.peij_no and a.cangk_dm = b.cangk_dm  and a.peij_dj<b.jiag_jp");
+        dao.execute(sql3);
+        List<Record> res3 = sql3.getList(Record.class);
+        int cnt3 = res3.get(0).getInt("cnt");
+        if (cnt3 > 0) {
+            if (BsdUtils.isHasQx(user.getCaozuoyuan_Gndm(), "2414")) {
+                tipLists.add("有配件单价小于库存平均价");
+            } else {
+                return jsons.json(1, 1, 0, "您没有【允许维修出库价低于库存均价】的权限！");
+            }
+        }
+        // 判断销价小于最低售价的配件
+        Sql sql4 = Sqls.queryRecord("select sys_jiag_low,sys_SetPrice from sm_system_info");
+        dao.execute(sql4);
+        List<Record> res4 = sql4.getList(Record.class);
+        int sys_jiag_low = res4.get(0).getInt("sys_jiag_low");
+        int sys_SetPrice = res4.get(0).getInt("sys_SetPrice");
+        if (sys_jiag_low == 0) { // 没有权限才判断
+            Sql sql5;
+            if (sys_SetPrice == 0) { // 统一定价
+                sql5 = Sqls.queryRecord("select count(*) as cnt from work_ll_gz a,kucshp_zk b " +
+                        "where a.peij_no = b.peij_no and isnull(a.peij_dj,0)<isnull(b.jiag_low,0) " +
+                        "and a.work_no='" + work_no + "' and b.gongsino =(select gongsino from sm_gongsi where gongsi_xz = 1)");
+            } else {  // 分公司设定价格
+                sql5 = Sqls.queryRecord("select count(*) as cnt from work_ll_gz a,kucshp_zk b " +
+                        "where a.peij_no = b.peij_no and isnull(a.peij_dj,0)<isnull(b.jiag_low,0) " +
+                        "and a.work_no='" + work_no + "' and b.gongsino ='" + user.getGongSiNo() + "'");
+            }
+            dao.execute(sql5);
+            List<Record> res5 = sql5.getList(Record.class);
+            int cnt5 = res5.get(0).getInt("cnt");
+            if (cnt5 > 0) {
+                return jsons.json(1, 1, 0, "您没有【销价小于最低售价】的权限！");
+            }
+        }
+        if (tipLists.size() > 0) {
+            String json = Json.toJson(tipLists);
+            return jsons.json(1, 1, 1, json);
+        }
+        return jsons.json(1, 0, 1, "");
+    }
+
+    /**
      * 美容快修的结算 1验证密码，0不验证密码
      *
      * @param caozuoyuanid
@@ -494,8 +586,7 @@ public class KuaixiuModule {
             // 3.//
             // 判断库存
             Sql sql2 = Sqls
-                    .queryRecord("select count(*)as cnt from work_ll_gz where peij_sl>peij_kc and flag_chuku = 0 and isnull(flag_xz,0)=0 and work_no= '"
-                            + work_no + "'");
+                    .queryRecord("select count(*) as cnt from work_ll_gz where peij_sl>peij_kc and flag_chuku = 0 and isnull(flag_xz,0)=0 and work_no= '" + work_no + "'");
             dao.execute(sql2);
             List<Record> res2 = sql2.getList(Record.class);
             int cnt2 = res2.get(0).getInt("cnt");

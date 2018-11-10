@@ -2253,7 +2253,7 @@ public class publicModule {
     @Ok("raw:json")
     public String removeBillByCard(String work_no) {
         // 把会员卡更新到pz表上
-        Sql sql = Sqls.create("update work_pz_gz set card_no='',card_kind='',card_itemrate=0,card_peijrate='' where work_no = '" + work_no + "'");
+        Sql sql = Sqls.create("update work_pz_gz set card_no='',card_kind='',card_itemrate=0,card_peijrate=0 where work_no = '" + work_no + "'");
         dao.execute(sql);
         // 更新维修项目
         updateWxxmPriceByCard("", work_no);
@@ -2320,7 +2320,7 @@ public class publicModule {
                 if (res3.size() > 0) {
                     String peij_zk = res3.get(0).getString("peij_zk");
                     Sql sql5 = Sqls
-                            .create("update work_ll_gz set peij_zk='" + peij_zk + ",peij_dj=isnull(peij_ydj,0)*" + peij_zk +
+                            .create("update work_ll_gz set peij_zk=" + peij_zk + ",peij_dj=isnull(peij_ydj,0)*" + peij_zk +
                                     " where work_no='" + work_no + "' and peij_no = '" + peij_no + "'");
                     dao.execute(sql5);
                     isUpdate = true;
@@ -2332,7 +2332,7 @@ public class publicModule {
                     if (res6.size() > 0) {
                         String peij_zk = res6.get(0).getString("lb_zk");
                         Sql sql7 = Sqls
-                                .queryRecord("update work_ll_gz set peij_zk='" + peij_zk + ",peij_dj=isnull(peij_ydj,0)*" + peij_zk +
+                                .queryRecord("update work_ll_gz set peij_zk=" + peij_zk + ",peij_dj=isnull(peij_ydj,0)*" + peij_zk +
                                         " where work_no='" + work_no + "' and peij_no = '" + peij_no + "'");
                         dao.execute(sql7);
                         isUpdate = true;
@@ -2356,7 +2356,7 @@ public class publicModule {
         // 如果没有更新过，则按照会员卡原始的折扣计算
         if (!isUpdate) {
             Sql sql12 = Sqls
-                    .create("update work_ll_gz set peij_zk='" + peijrate + ",peij_dj=isnull(peij_ydj,0)*" + peijrate +
+                    .create("update work_ll_gz set peij_zk=" + peijrate + ",peij_dj=isnull(peij_ydj,0)*" + peijrate +
                             " where work_no='" + work_no + "' and peij_no = '" + peij_no + "'");
             dao.execute(sql12);
         }
