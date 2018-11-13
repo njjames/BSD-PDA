@@ -389,8 +389,11 @@ public class publicModule {
                 case ITBank: // 银行
                     ArrayList<Object> list = new ArrayList<>();
                     List<Jizhang_yhdyEntity> ji = dao.query(Jizhang_yhdyEntity.class, Cnd.where("GongSiNo", "=", GongSiNo));
+                    list.add("现金");
                     for (Jizhang_yhdyEntity jizhang_yhdyEntity : ji) {
                         list.add(jizhang_yhdyEntity.getYh_name());
+                    }
+                    if (!list.contains("微信支付")) {
                         list.add("微信支付");
                     }
                     json = Json.toJson(list, JsonFormat.full());

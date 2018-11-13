@@ -2,16 +2,12 @@ package org.aotu.kuixiu.module;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.math.BigDecimal;
-import java.net.URL;
-import java.net.URLConnection;
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.Types;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,15 +17,11 @@ import java.util.Map;
 //
 
 
-import net.sf.json.JSONArray;
-
-
 //
 import org.aotu.Jsons;
 import org.aotu.offsetPager;
 import org.aotu.VIPcard.entity.Kehu_CardEntity;
 import org.aotu.VIPcard.module.card;
-import org.aotu.lswx.entity.Work_pz_sjEntity;
 import org.aotu.offer.entity.feilvEntity;
 import org.aotu.order.entity.Work_ll_gzEntity;
 import org.aotu.order.entity.Work_mx_gzEntity;
@@ -39,28 +31,22 @@ import org.aotu.publics.eneity.Work_cheliang_smEntity;
 import org.aotu.publics.module.publicModule;
 import org.aotu.user.entity.userEntity;
 import org.aotu.util.BsdUtils;
-import org.apache.http.Consts;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.nutz.dao.Chain;
 import org.nutz.dao.Cnd;
 import org.nutz.dao.ConnCallback;
 import org.nutz.dao.Dao;
 import org.nutz.dao.Sqls;
-import org.nutz.dao.entity.Entity;
 import org.nutz.dao.entity.Record;
 import org.nutz.dao.sql.Sql;
 import org.nutz.ioc.loader.annotation.Inject;
@@ -71,7 +57,6 @@ import org.nutz.mvc.annotation.At;
 import org.nutz.mvc.annotation.Ok;
 import org.nutz.mvc.annotation.Param;
 
-import com.alibaba.druid.util.HttpClientUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -406,6 +391,7 @@ public class KuaixiuModule {
 
     /**
      * 结算之前的检测
+     *
      * @param work_no
      * @param caozuoyuanID
      * @return
@@ -454,7 +440,7 @@ public class KuaixiuModule {
         }
         // 判断是否有允许维修出库价低于库存均价
         Sql sql3 = Sqls.queryRecord("select count(*) as cnt from work_ll_gz a ,kucshp_fl b where a.work_no = '"
-                        + work_no + "' and a.peij_no = b.peij_no and a.cangk_dm = b.cangk_dm  and a.peij_dj<b.jiag_jp");
+                + work_no + "' and a.peij_no = b.peij_no and a.cangk_dm = b.cangk_dm  and a.peij_dj<b.jiag_jp");
         dao.execute(sql3);
         List<Record> res3 = sql3.getList(Record.class);
         int cnt3 = res3.get(0).getInt("cnt");
@@ -494,6 +480,439 @@ public class KuaixiuModule {
             return jsons.json(1, 1, 1, json);
         }
         return jsons.json(1, 0, 1, "");
+    }
+
+    /**
+     * 检测优惠金额是否在优惠率之内
+     * 不是，则返回fail
+     * 是，就把优惠金额更新到库里面
+     *
+     * @param work_no
+     * @param xm_yhje
+     * @param cl_yhje
+     * @param caozuoyuanID
+     * @return
+     */
+    @At
+    @Ok("raw:json")
+    public String checkYhlv(String work_no, String xm_yhje, String cl_yhje, int caozuoyuanID) {
+        userEntity user = dao.fetch(userEntity.class, caozuoyuanID);
+        BigDecimal xiaoYhlv = new BigDecimal(1 - user.getXiao_yhlv() * 0.01);
+        BigDecimal xmYhje = new BigDecimal(xm_yhje);
+        BigDecimal clYhje = new BigDecimal(cl_yhje);
+        BigDecimal totalYhje = xmYhje.add(clYhje);
+        // 获取总金额，平板只用到了项目优惠和材料优惠
+        Sql sql = Sqls.queryRecord("select isnull(xche_rgf,0)+isnull(xche_clf,0)+isnull(xche_wjgf,0)+isnull(xche_qtf,0)+isnull(xche_glf,0) as totalje from work_pz_gz" +
+                " where work_no= '" + work_no + "'");
+        dao.execute(sql);
+        List<Record> res1 = sql.getList(Record.class);
+        BigDecimal totalje = new BigDecimal(res1.get(0).getString("totalje"));
+        // 如果优惠金额大于最大的优惠金额，则返回fail
+        if (totalYhje.subtract(totalje.multiply(xiaoYhlv)).compareTo(BigDecimal.ZERO) > 0) {
+            return "fail";
+        }
+        Sql sql1 = Sqls.create("update work_pz_gz set xche_wxxm_yhje=" + xmYhje.toString() + ",xche_peij_yhje=" + clYhje.toString() + ",xche_yhje" + totalYhje.toString() +
+                " where work_no= '" + work_no + "'");
+        dao.execute(sql1);
+        return "success";
+    }
+
+    public String realJiesuan(String work_no, String card_no, int iscard, String xche_ssje, String zhifu_card_je,
+                              String zhifu_card_xj, String xche_jsfs, String yh_zhanghao, String caozuoyuan_xm,
+                              int sys_baoyang_che_fs, int isNextTx, String next_bylc, String next_byrq, String che_no) {
+        // 如果没有设置账号，默认是现金
+        if (yh_zhanghao == null || yh_zhanghao.equals("")) {
+            yh_zhanghao = "现金";
+        }
+        // 更新一下pz表中的金额
+        Sql sql1;
+        if (iscard == 1) {
+            sql1 = Sqls.create("update work_pz_gz set flag_cardjs=1,zhifu_card_no='" + card_no +
+                    "',zhifu_card_je=" + zhifu_card_je + ",zhifu_card_xj=" + zhifu_card_xj +
+                    ",xche_ysje=xche_hjje-xche_yhje" +
+                    ",xche_ssje=" + xche_ssje +
+                    ",xche_yeje=xche_hjje-xche_yhje-" + xche_ssje +
+                    ",xche_jsfs='" + xche_jsfs + "'" +
+                    ",yh_zhanghao='" + yh_zhanghao + "'" +
+                    " where work_no = '" + work_no + "' ");
+        } else {
+            sql1 = Sqls.create("update work_pz_gz set flag_cardjs=0,zhifu_card_no='',zhifu_card_je=0,zhifu_card_xj=0" +
+                    ",xche_ysje=xche_hjje-xche_yhje" +
+                    ",xche_ssje=" + xche_ssje +
+                    ",xche_yeje=xche_hjje-xche_yhje-" + xche_ssje +
+                    ",xche_jsfs='" + xche_jsfs + "'" +
+                    ",yh_zhanghao='" + yh_zhanghao + "'" +
+                    " where work_no = '" + work_no + "' ");
+        }
+        dao.execute(sql1);
+        // 处理下次保养信息
+        if (sys_baoyang_che_fs == 1) {
+            if (isNextTx == 1) {
+                if (next_bylc != null && !"".equals(next_bylc)) {
+                    dao.execute(Sqls.create("update work_cheliang_sm set che_prior_licheng=che_next_licheng,che_next_licheng=" + next_bylc +
+                            " where che_no ='" + che_no + "'"));
+                }
+                if (next_byrq != null && !"".equals(next_byrq)) {
+                    dao.execute(Sqls.create("update work_cheliang_sm set flag_notsendmsg=0,che_prior_byrq=che_next_byrq,che_next_byrq='" + next_byrq + "'" +
+                            " where che_no ='" + che_no + "'"));
+                }
+            }
+        } else {
+            // TODO
+        }
+        Sql sql2 = Sqls.create("delete from work_fkdw_list where work_no = '" + work_no + "'");
+        dao.execute(sql2);
+        Sql sql3 = Sqls.create("insert into work_fkdw_list(work_no,kehu_no,che_no,xche_fkdw_no,xche_fkdw_mc,xche_ysje,xche_ssje,xche_yhje,xche_yeje)" +
+                "select work_no,kehu_no,che_no,kehu_no,kehu_mc,xche_ysje,xche_ssje,xche_yhje,xche_yeje " +
+                "from work_pz_gz where work_no='" + work_no + "'");
+        dao.execute(sql3);
+        // 插入work_pz_sj
+        insertWorkPzSj(work_no);
+        // 插入work_pz_sj_ls
+        insertWorkPzSjLs(work_no);
+        // 插入work_mx_sj
+        insertWorkMxSj(work_no);
+        // 插入work_mx_sj_ls
+        insertWorkMxSjLs(work_no);
+        // 插入work_wjg_sj
+        insertWorkWjgSj(work_no);
+        // 插入check_mx_sj
+        insertCheckMxSj(work_no);
+        // 插入work_ll_sj
+        insertWorkLlSj(work_no);
+        // 插入work_ll_sj_ls
+        insertWorkLlSjLs(work_no);
+        // 插入Work_Pg_Sj
+        insertWorkPgSj(work_no);
+        // 执行Wx_lingliao_chuku的存储过程
+        if (callReturnValueProc("Wx_lingliao_chuku('" + work_no + "')") != 0) {
+            return jsons.json(1, 1, 0, "结算失败，存储过程--出库出错！");
+        }
+        // 执行wx_weixiu_kuan的存储过程
+        if (callReturnValueProc("wx_weixiu_kuan('" + work_no + "')") != 0) {
+            return jsons.json(1, 1, 0, "结算失败，存储过程--收款出错！");
+        }
+        // 执行wx_weixiu_piao的存储过程
+        if (callReturnValueProc("wx_weixiu_piao('" + work_no + "')") != 0) {
+            return jsons.json(1, 1, 0, "结算失败，存储过程--开票出错！");
+        }
+        dao.execute(Sqls.create("update work_yuyue_pz set yuyue_progress='已离店' where work_no='" + work_no + "'"));
+        // 处理日记账
+        BigDecimal ssje = new BigDecimal(xche_ssje);
+        // 如果不是会员卡支付，并且实收金额不为0
+        if (iscard == 0 && ssje.compareTo(BigDecimal.ZERO) != 0) {
+            Sql sql4 = Sqls.create(
+                    "insert into jizhang_xjmx(" +
+                            "kehu_no,yewu_jsfs,jizhang_name,jizhang_pz,jizhang_km,jizhang_jf,jizhang_rq,jizhang_jb,jizhang_cz,jizhang_bz,yewu_dh,yewu_xz,GongSiNo,GongSiMc)" +
+                    "select kehu_no,xche_jsfs,yh_zhanghao,work_no,case yh_zhanghao when '现金' then '101' else '102' end,xche_ssje,getdate(),xche_jb,xche_cz,'收维修款（PAD）',work_no,'2007',gongsino,gongsimc " +
+                            "from work_pz_gz where work_no='" + work_no + "'"
+            );
+            dao.execute(sql4);
+        }
+        // 如果补现金不为0，则插入日记账
+        BigDecimal buxj = new BigDecimal(zhifu_card_xj);
+        if (buxj.compareTo(BigDecimal.ZERO) != 0) {
+            Sql sql5 = Sqls.create(
+                    "insert into jizhang_xjmx(" +
+                            "kehu_no,yewu_jsfs,jizhang_name,jizhang_pz,jizhang_km,jizhang_jf,jizhang_rq,jizhang_jb,jizhang_cz,jizhang_bz,yewu_dh,yewu_xz,GongSiNo,GongSiMc)" +
+                    "select kehu_no,xche_jsfs,yh_zhanghao,work_no,case yh_zhanghao when '现金' then '101' else '102' end,zhifu_card_xj,getdate(),xche_jb,xche_cz,'收维修款补现金（PAD）',work_no,'2007',gongsino,gongsimc " +
+                            "from work_pz_gz where work_no='" + work_no + "'"
+            );
+            dao.execute(sql5);
+        }
+        // 处理会员卡积分，如果是储值卡结算，则积分到储值卡
+        if (iscard == 1) {
+            updateCardJifen(work_no, card_no, xche_ssje, caozuoyuan_xm);
+        }
+        // 减去会员卡（单据中的会员卡）中的特殊项目
+        Sql sql8 = Sqls.queryRecord("select card_no from work_pz_gz where work_no='" + work_no + "'");
+        dao.execute(sql8);
+        List<Record> res1 = sql8.getList(Record.class);
+        String cardNo = res1.get(0).getString("card_no");
+        if (cardNo != null && !"".equals(card_no)) {
+            updateCardSpecialCS(work_no, cardNo);
+            if (iscard == 0) {
+                updateCardJifen(work_no, cardNo, xche_ssje, caozuoyuan_xm);
+            }
+        }
+        return jsons.json(1, 1, 1, "结算成功");
+    }
+
+    /**
+     * 更新会员卡积分信息
+     * @param work_no
+     * @param card_no
+     * @param xche_ssje
+     * @param caozuoyuan_xm
+     */
+    private void updateCardJifen(String work_no, String card_no, String xche_ssje, String caozuoyuan_xm) {
+        // 先修改积分
+        dao.execute(Sqls.create("update kehu_card set card_xiaozje=card_xiaozje+" + xche_ssje + " where card_no='" + card_no + "'"));
+        Sql sql6 = Sqls.queryRecord("select Card_JifenType,Card_JifenLv from cardsysset");
+        dao.execute(sql6);
+        List<Record> res = sql6.getList(Record.class);
+        int Card_JifenType = res.get(0).getInt("Card_JifenType");
+        BigDecimal cardJifenLv = new BigDecimal(res.get(0).getString("Card_JifenLv"));
+        if (Card_JifenType == 0) { // 按商品积分率
+            Sql sql7 = Sqls.queryRecord("select work_jifen_sum from work_pz_gz where work_no='" + work_no + "'");
+            dao.execute(sql7);
+            List<Record> res1 = sql7.getList(Record.class);
+            BigDecimal workJifenSum = new BigDecimal(res1.get(0).getString("work_jifen_sum"));
+            dao.execute(Sqls.create("update kehu_card set card_jifen=Card_jifen+" + workJifenSum.toString() + ",card_leftjf=card_leftjf+" + workJifenSum.toString() +
+                    " where card_no='" + card_no + "'"));
+        } else { // 按会员卡积分率
+            if (cardJifenLv.compareTo(BigDecimal.ZERO) != 0) {
+                dao.execute(Sqls.create("update kehu_card set card_jifen=Card_jifen+" + xche_ssje + "*" + cardJifenLv.toString() +
+                        ",card_leftjf=card_leftjf+" + xche_ssje + "*" + cardJifenLv.toString() +
+                        " where card_no='" + card_no + "'"));
+            }
+        }
+        // 在处理积分升级
+        Kehu_CardEntity kehuCardEntity = dao.fetch(Kehu_CardEntity.class, card_no);
+        double cardJifen = kehuCardEntity.getCard_jifen();
+        boolean flagUpdate = kehuCardEntity.getFlag_update();
+        String nowCardKind = kehuCardEntity.getCard_kind();
+        Sql sql8 = Sqls.queryRecord("select top 1 cardkind from cardkind where card_jfmin<=" + cardJifen + " order by card_jfmin desc");
+        dao.execute(sql8);
+        List<Record> res2 = sql8.getList(Record.class);
+        String updateCardkind = res2.get(0).getString("cardkind");
+        if (flagUpdate && !"".equals(updateCardkind) && !nowCardKind.equals(updateCardkind)) {
+            Sqls.create("insert into cardkindrename(card_no,oldcard_kind,newcard_kind,czy,ddate,demo)" +
+                    "values('" + card_no + "','" + nowCardKind + "','" + updateCardkind + "','" + caozuoyuan_xm + "',getdate(),'会员积分升级')");
+            Sqls.create("update kehu_card set card_kind='" + updateCardkind + "' where card_no='" + card_no + "'");
+        }
+    }
+
+    /**
+     * 更新特殊项目次数
+     * @param work_no
+     * @param cardNo
+     */
+    private void updateCardSpecialCS(String work_no, String cardNo) {
+        // 处理特殊维修项目
+        Sql sql9 = Sqls.queryRecord("select wxxm_no from work_mx_sj where work_no='" + work_no + "'");
+        dao.execute(sql9);
+        List<Record> list = sql9.getList(Record.class);
+        for (Record record : list) {
+            String wxxm_no = record.getString("wxxm_no");
+            Sql sql10 = Sqls
+                    .queryRecord("select count(*) as cnt from kehu_carddetail where card_no='" + cardNo + "' and wxxm_no='" + wxxm_no + "' and wxxm_cs>wxxm_yqcs");
+            dao.execute(sql10);
+            List<Record> res = sql10.getList(Record.class);
+            if (res.size() > 0) {
+                dao.execute(Sqls.create("update kehu_carddetail set wxxm_yqcs=wxxm_yqcs+1 where card_no='" + cardNo + "' and wxxm_no='" + wxxm_no + "'"));
+                dao.execute(Sqls.create("update work_mx_sj set Flag_WxxcCs = 1 where work_no ='" + work_no + "' and wxxm_no='" + wxxm_no + "'"));
+            }
+        }
+        // 处理特殊配件项目
+        Sql sql11 = Sqls.queryRecord("select peij_no,peij_sl from work_ll_sj where work_no='" + work_no + "'");
+        dao.execute(sql11);
+        List<Record> list1 = sql11.getList(Record.class);
+        for (Record record : list1) {
+            String peij_no = record.getString("peij_no");
+            BigDecimal peijSl = new BigDecimal(record.getString("peij_sl"));
+            Sql sql12 = Sqls
+                    .queryRecord("select isnull(peij_card_sl,0)-isnull(peij_card_yqsl,0) as canusesl " +
+                            "from kehu_carddetail where card_no='" + cardNo + "' and peij_no='" + peij_no + "' and peij_card_sl>wxxm_yqcs");
+            dao.execute(sql12);
+            List<Record> res2 = sql12.getList(Record.class);
+            BigDecimal canusesl = new BigDecimal(res2.get(0).getString("canusesl"));
+            if (canusesl.subtract(peijSl).compareTo(BigDecimal.ZERO) >= 0) {
+                dao.execute(Sqls.create("update kehu_carddetail set peij_card_yqsl=peij_card_yqsl+" + peijSl.toString() + " where card_no='" + cardNo + "' and peij_no='" + peij_no + "'"));
+                dao.execute(Sqls.create("update work_ll_sj set Flag_peijcardSL=" + peijSl.toString() + " where work_no ='" + work_no + "' and peij_no='" + peij_no + "'"));
+            } else {
+                dao.execute(Sqls.create("update kehu_carddetail set peij_card_yqsl=peij_card_sl where card_no='" + cardNo + "' and peij_no='" + peij_no + "'"));
+                dao.execute(Sqls.create("update work_ll_sj set Flag_peijcardSL=" + canusesl.toString() + " where work_no ='" + work_no + "' and peij_no='" + peij_no + "'"));
+            }
+
+        }
+    }
+
+
+    @At
+    @Ok("raw:json")
+    public int execWxLingliaoChuku(String work_no) {
+//        runCall("Wx_lingliao_chuku('" + work_no + "')");
+        // 尝试1：
+//        Sql sql = Sqls.queryRecord("declare @@rerturn int exec @@rerturn=Wx_lingliao_chuku '" + work_no + "' select @@rerturn as result");
+//        dao.execute(sql);
+//        List<Record> list = sql.getList(Record.class); // 这里的list的size永远是0，失败
+//        int result = list.get(0).getInt("result");
+        // 尝试2：
+//        Sql sql = Sqls.create("{call Wx_lingliao_chuku(@work_no)}");
+//        sql.params().set("work_no", work_no);
+//        dao.execute(sql);
+//        Record outParams = sql.getOutParams(); // 这个方法获取的一直null， 失败
+//        System.out.println(outParams);
+        // 尝试3：
+//        Sql sql = Sqls.create("{call $returnValue=Wx_lingliao_chuku(@work_no)}");
+//        sql.vars().set("returnValue", "@value");  // 这种方式运行直接报错
+//        sql.params().set("work_no", work_no);
+//        dao.execute(sql);
+
+        int i = callReturnValueProc("Wx_lingliao_chuku('" + work_no + "')");
+
+//        runCall();
+        return i;
+    }
+
+    /**
+     * 调用存储过程，并返回存储过程的return值，此值是int类型
+     *
+     * @param procSql 存储过程和其参数的sql语句
+     * @return 存储过程的返回值
+     */
+    private int callReturnValueProc(final String procSql) {
+        final int[] returnValue = new int[1];
+        dao.run(new ConnCallback() {
+            @Override
+            public void invoke(java.sql.Connection conn) throws Exception {
+                CallableStatement cs = conn.prepareCall("{? = call " + procSql + "}");
+                cs.registerOutParameter(1, Types.INTEGER);
+                cs.execute();
+                returnValue[0] = cs.getInt(1);
+            }
+        });
+        return returnValue[0];
+    }
+
+    private void insertWorkPgSj(String work_no) {
+        Sql sql = Sqls.create(
+                "insert into Work_Pg_Sj(work_no, wxxm_no, reny_no, reny_mc, wxry_bm, wxry_cj," +
+                        "wxry_bz, paig_khgs, paig_khje, paig_pgsj, paig_bz, wxry_pg)" +
+                        "select work_no, wxxm_no, reny_no, reny_mc, wxry_bm, wxry_cj," +
+                        "wxry_bz, paig_khgs, paig_khje, paig_pgsj, paig_bz, wxry_pg " +
+                        "from Work_Pg_Gz where work_no='" + work_no + "' order by reco_no");
+        dao.execute(sql);
+    }
+
+    private void insertWorkLlSjLs(String work_no) {
+        Sql sql = Sqls.create(
+                "insert into work_ll_sj_ls(" +
+                        "work_no, peij_no, peij_sl, peij_dj, peij_je, peij_cb, cangk_dm, peij_zt," +
+                        "peij_hw, peij_ry, peij_bz,peij_ydj, peij_yje, peij_zk," +
+                        "peij_sl_ls, peij_dw_ls, peij_dj_ls, danwei_bs_ls, reco_no1, flag_xz,peij_tcfs,peij_tc,peij_tcje,peij_jifen,peij_jifenlv," +
+                        "peij_mc,peij_th,peij_dw,peij_cx,peij_pp,peij_cd)" +
+                        "select work_no,peij_no,peij_sl,peij_dj,peij_je,peij_cb,cangk_dm,peij_zt," +
+                        "peij_hw,peij_ry,peij_bz,peij_ydj, peij_yje, peij_zk," +
+                        "peij_sl_ls, peij_dw, peij_dj_ls, danwei_bs_ls, reco_no, flag_xz,peij_tcfs,peij_tc,peij_tcje,peij_jifen,peij_jifenlv," +
+                        "peij_mc,peij_th,peij_dw,peij_cx,peij_pp,peij_cd " +
+                        "from work_ll_gz where work_no='" + work_no + "' order by reco_no");
+        dao.execute(sql);
+    }
+
+    private void insertWorkLlSj(String work_no) {
+        Sql sql = Sqls.create(
+                "insert into work_ll_sj(" +
+                        "work_no, peij_no, peij_sl, peij_dj, peij_je, peij_cb, peij_cbje, cangk_dm, peij_zt," +
+                        "peij_hw, peij_ry, peij_bz, flag_import, have_import, flag_chuku, peij_ydj, peij_yje, peij_zk," +
+                        "peij_sl_ls, peij_dw_ls, peij_dj_ls, danwei_bs_ls, reco_no1, flag_xz,peij_tcfs,peij_tc,peij_tcje,peij_jifen,peij_jifenlv)" +
+                        "select work_no,peij_no,peij_sl,peij_dj,peij_je,peij_cb,peij_cbje,cangk_dm,peij_zt,peij_hw,peij_ry,peij_bz," +
+                        "flag_import, have_import, flag_chuku, peij_ydj, peij_yje, peij_zk," +
+                        "peij_sl_ls, peij_dw, peij_dj_ls, danwei_bs_ls, reco_no, flag_xz,peij_tcfs,peij_tc,peij_tcje,peij_jifen,peij_jifenlv " +
+                        "from work_ll_gz where work_no='" + work_no + "' order by reco_no");
+        dao.execute(sql);
+    }
+
+    private void insertCheckMxSj(String work_no) {
+        Sql sql = Sqls.create(
+                "insert into check_mx_sj(work_no,check_project,flag_normal,flag_adjust,flag_suggest_replace,kehu_view)" +
+                        "select work_no,check_project,flag_normal,flag_adjust,flag_suggest_replace,kehu_view " +
+                        "from check_mx_gz where work_no='" + work_no + "' order by reco_no");
+        dao.execute(sql);
+    }
+
+    private void insertWorkWjgSj(String work_no) {
+        Sql sql = Sqls.create(
+                "insert into work_wjg_sj(work_no, wxxm_no, wxxm_mc, wxxm_cb, wxxm_je, wxxm_bz)" +
+                        "select work_no, wxxm_no, wxxm_mc, wxxm_cb, wxxm_je, wxxm_bz " +
+                        "from work_wjg_gz where work_no='" + work_no + "' order by reco_no");
+        dao.execute(sql);
+    }
+
+    private void insertWorkMxSjLs(String work_no) {
+        Sql sql = Sqls.create(
+                "insert into work_mx_sj_ls(work_no, wxxm_no, wxxm_mc, wxxm_gs, wxxm_khgs, wxxm_cb, wxxm_je, wxxm_ry," +
+                        "wxxm_zt, wxxm_bz, wxxm_zk,wxxm_yje,flag_xz,wxxm_mxcx,wxxm_dj,wxxm_tcfs,wxxm_tc,wxxm_tcje, wxxm_bjrq,wxxm_jifen,wxxm_jifenlv)" +
+                        "select work_no, wxxm_no, wxxm_mc, wxxm_gs, wxxm_khgs, wxxm_cb, wxxm_je, wxxm_ry," +
+                        "wxxm_zt, wxxm_bz, wxxm_zk,wxxm_yje,flag_xz,wxxm_mxcx,wxxm_dj,wxxm_tcfs,wxxm_tc,wxxm_tcje, wxxm_bjrq,wxxm_jifen,wxxm_jifenlv " +
+                        "from work_mx_gz where work_no='" + work_no + "' order by reco_no");
+        dao.execute(sql);
+    }
+
+    private void insertWorkMxSj(String work_no) {
+        Sql sql = Sqls.create(
+                "insert into work_mx_sj(" + "work_no, wxxm_no, wxxm_mc, wxxm_gs, wxxm_khgs, wxxm_cb, wxxm_je, wxxm_ry," +
+                        "wxxm_zt, wxxm_bz, wxxm_zk,wxxm_yje,flag_xz,wxxm_mxcx,wxxm_dj,wxxm_tcfs,wxxm_tc,wxxm_tcje, wxxm_bjrq,wxxm_jifen,wxxm_jifenlv)" +
+                        "select work_no, wxxm_no, wxxm_mc, wxxm_gs, wxxm_khgs, wxxm_cb, wxxm_je, wxxm_ry," +
+                        "wxxm_zt, wxxm_bz, wxxm_zk,wxxm_yje,flag_xz,wxxm_mxcx,wxxm_dj,wxxm_tcfs,wxxm_tc,wxxm_tcje, wxxm_bjrq,wxxm_jifen,wxxm_jifenlv " +
+                        "from work_mx_gz where work_no='" + work_no + "' order by reco_no");
+        dao.execute(sql);
+    }
+
+    private void insertWorkPzSjLs(String work_no) {
+        Sql sql = Sqls.create(
+                "insert into work_pz_sj_ls (" +
+                        "work_no, kehu_no, kehu_sj, che_no, xche_sfbz, xche_sffl, xche_lc, xche_cy," +
+                        "xche_cclc, xche_last_lc,xche_last_jdrq,xche_jdrq, xche_gj, xche_wxjd,xche_yjwgrq, xche_wgrq, xche_pgcz, xche_jlr, xche_jlrq, xche_jsr, xche_jsrq," +
+                        "xche_fpfs, xche_fplv, xche_rgf, xche_rgsl, xche_rgse, xche_rgbh, xche_clf, xche_clsl, xche_clse," +
+                        "xche_clbh, xche_glf, xche_wjgf, xche_wjgcb, xche_qtf, xche_yhje, xche_ysje, xche_rgcb, xche_cb," +
+                        "xche_zxr, xche_qtxm, xche_wjgx, xche_yhyy, xche_gdfl, xche_wxfl, xche_bz, xche_cz, xche_jb, xche_jcr," +
+                        "xche_hjje, xche_ssje, xche_yeje, xche_jsfs, dept_mc, flag_fast, card_no, card_kind, flag_cardjs," +
+                        "zhifu_card_no, zhifu_card_je,xche_kpje,xche_kpse,xche_fpno,zhifu_card_xj," +
+                        "xche_sbclf,xche_sbgsf,xche_sbgss,xche_sbgsff,xche_sbclcb,xche_bxclf,xche_bxclcb,xche_bxgsf,xche_bxgss,xche_bxgscb," +
+                        "card_itemrate,card_peijrate, gongsino, gongsimc, xche_wxxmlv, xche_peijlv,xche_sjhk,xche_xzrgf_je,xche_xzclf_je," +
+                        "wxxm_tcje_sum,wxxm_zztcje_sum,peij_tcje_sum,che_zjno,xche_wxxm_yhje,xche_peij_yhje,work_jifen_sum,cangk_dm,xche_saobmianshou,xche_bxmianshou,xche_zengsmianshou," +
+                        "kehu_mc,kehu_xm,kehu_dz,kehu_dh,che_vin,che_fd,che_wxys,che_cx)" +
+                        "select work_no,kehu_no,kehu_sj,che_no,xche_sfbz,xche_sffl,xche_lc,xche_cy," +
+                        "isnull(xche_lc,0), isnull(xche_last_lc,0),xche_last_jdrq,xche_jdrq,xche_gj,xche_wxjd, xche_yjwgrq,xche_jsrq," +
+                        "xche_pgcz,xche_jlr,xche_jlrq,xche_jsr, xche_jsrq,xche_fpfs,xche_fplv,xche_rgf,xche_rgsl,xche_rgse,xche_rgbh," +
+                        "xche_clf,xche_clsl,xche_clse,xche_clbh,xche_glf,xche_wjgf,xche_wjgcb,xche_qtf,xche_yhje,xche_ysje,xche_rgcb,xche_cb," +
+                        "xche_zxr,xche_qtxm,xche_wjgx,xche_yhyy,xche_gdfl,xche_wxfl,xche_bz,xche_cz,xche_jb,xche_jcr,xche_hjje,xche_ssje," +
+                        "xche_yeje,xche_jsfs,dept_mc,isnull(flag_fast,0),card_no,card_kind,flag_cardjs,zhifu_card_no," +
+                        "zhifu_card_je,xche_kpje,xche_kpse,xche_fpno,zhifu_card_xj," +
+                        "xche_sbclf,xche_sbgsf,xche_sbgss,xche_sbgsff,xche_sbclcb,xche_bxclf,xche_bxclcb,xche_bxgsf,xche_bxgss,xche_bxgscb," +
+                        "card_itemrate,card_peijrate,gongsino,gongsimc," +
+                        "xche_wxxmlv,xche_peijlv,xche_sjhk,xche_xzrgf_je,xche_xzclf_je,wxxm_tcje_sum,wxxm_zztcje_sum,peij_tcje_sum,che_zjno," +
+                        "xche_wxxm_yhje,xche_peij_yhje,work_jifen_sum,cangk_dm,xche_saobmianshou,xche_bxmianshou,xche_zengsmianshou," +
+                        "kehu_mc,kehu_xm,kehu_dz,kehu_dh,che_vin,che_fd,che_wxys,che_cx " +
+                        "from work_pz_gz where work_no='" + work_no + "'"
+        );
+        dao.execute(sql);
+    }
+
+    /**
+     * 插入work_pz_sj
+     *
+     * @param work_no
+     */
+    private void insertWorkPzSj(String work_no) {
+        Sql sql = Sqls.create(
+                "insert into work_pz_sj (" +
+                        "work_no, kehu_no, kehu_sj, che_no, xche_sfbz, xche_sffl, xche_lc, xche_cy," +
+                        "xche_cclc, xche_last_lc,xche_last_jdrq,xche_jdrq, xche_gj, xche_wxjd,xche_yjwgrq, xche_wgrq, xche_pgcz, xche_jlr, xche_jlrq, xche_jsr, xche_jsrq," +
+                        "xche_fpfs, xche_fplv, xche_rgf, xche_rgsl, xche_rgse, xche_rgbh, xche_clf, xche_clsl, xche_clse," +
+                        "xche_clbh, xche_glf, xche_wjgf, xche_wjgcb, xche_qtf, xche_yhje, xche_ysje, xche_rgcb, xche_cb," +
+                        "xche_zxr, xche_qtxm, xche_wjgx, xche_yhyy, xche_gdfl, xche_wxfl, xche_bz, xche_cz, xche_jb, xche_jcr," +
+                        "xche_hjje, xche_ssje, xche_yeje, xche_jsfs, dept_mc, flag_fast, card_no, card_kind, flag_cardjs," +
+                        "zhifu_card_no, zhifu_card_je,xche_kpje,xche_kpse,xche_fpno,zhifu_card_xj," +
+                        "xche_sbclf,xche_sbgsf,xche_sbgss,xche_sbgsff,xche_sbclcb,xche_bxclf,xche_bxclcb,xche_bxgsf,xche_bxgss,xche_bxgscb," +
+                        "card_itemrate,card_peijrate, gongsino, gongsimc, xche_wxxmlv, xche_peijlv,yh_zhanghao,xche_sjhk,xche_xzrgf_je,xche_xzclf_je," +
+                        "wxxm_tcje_sum,wxxm_zztcje_sum,peij_tcje_sum,che_zjno,xche_wxxm_yhje,xche_peij_yhje,work_jifen_sum,cangk_dm,xche_saobmianshou,xche_bxmianshou,xche_zengsmianshou)" +
+                        "select work_no,kehu_no,kehu_sj,che_no,xche_sfbz,xche_sffl,xche_lc,xche_cy," +
+                        "isnull(xche_lc,0), isnull(xche_last_lc,0),xche_last_jdrq,xche_jdrq,xche_gj,xche_wxjd, xche_yjwgrq,xche_jsrq," +
+                        "xche_pgcz,xche_jlr,xche_jlrq,xche_jsr, xche_jsrq,xche_fpfs,xche_fplv,xche_rgf,xche_rgsl,xche_rgse,xche_rgbh," +
+                        "xche_clf,xche_clsl,xche_clse,xche_clbh,xche_glf,xche_wjgf,xche_wjgcb,xche_qtf,xche_yhje,xche_ysje,xche_rgcb,xche_cb," +
+                        "xche_zxr,xche_qtxm,xche_wjgx,xche_yhyy,xche_gdfl,xche_wxfl,xche_bz,xche_cz,xche_jb,xche_jcr,xche_hjje,xche_ssje," +
+                        "xche_yeje,xche_jsfs,dept_mc,isnull(flag_fast,0),card_no,card_kind,flag_cardjs,zhifu_card_no," +
+                        "zhifu_card_je,xche_kpje,xche_kpse,xche_fpno,zhifu_card_xj," +
+                        "xche_sbclf,xche_sbgsf,xche_sbgss,xche_sbgsff,xche_sbclcb,xche_bxclf,xche_bxclcb,xche_bxgsf,xche_bxgss,xche_bxgscb," +
+                        "card_itemrate,card_peijrate,gongsino,gongsimc," +
+                        "xche_wxxmlv,xche_peijlv,yh_zhanghao,xche_sjhk,xche_xzrgf_je,xche_xzclf_je,wxxm_tcje_sum,wxxm_zztcje_sum,peij_tcje_sum,che_zjno," +
+                        "xche_wxxm_yhje,xche_peij_yhje,work_jifen_sum,cangk_dm,xche_saobmianshou,xche_bxmianshou,xche_zengsmianshou " +
+                        "from work_pz_gz where work_no='" + work_no + "'"
+        );
+        dao.execute(sql);
     }
 
     /**
@@ -827,10 +1246,7 @@ public class KuaixiuModule {
             }
 
             Sql sqlcjn3_1 = Sqls.create("update work_pz_gz set xche_yeje = xche_ysje - xche_ssje where work_no = '" + work_no + "' ");
-
-
             dao.execute(sqlcjn3_1);
-
             // 10.//
             Sql sql101 = Sqls
                     .queryRecord("delete from work_fkdw_list where work_no = '"
@@ -1737,6 +2153,11 @@ public class KuaixiuModule {
         } else {
             map.put("card_leftje", "0");
         }
+        Sql sql2 = Sqls.queryRecord("select sys_baoyang_che_fs from sm_system_info");
+        dao.execute(sql2);
+        List<Record> list2= sql2.getList(Record.class);
+        int sysBaoyangCheFs = list2.get(0).getInt("sys_baoyang_che_fs");
+        map.put("sys_baoyang_che_fs", "" + sysBaoyangCheFs);
         if (map.size() > 0) {
             String json = Json.toJson(map);
             return jsons.json(1, 1, 1, json);

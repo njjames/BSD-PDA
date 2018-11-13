@@ -5,10 +5,13 @@
  */
 package org.aotu.publics.eneity;
 
+import org.nutz.dao.entity.annotation.Table;
+
 /**
  * @author LHW
  *
  */
+@Table(value="jizhang_yhdy")
 public class Jizhang_yhdyEntity {
 	private int id;
 	private String yh_name;

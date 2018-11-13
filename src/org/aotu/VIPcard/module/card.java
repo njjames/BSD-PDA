@@ -182,7 +182,7 @@ public class card {
 	 */
 	@At
 	@Ok("raw:json")
-	public String getVipCardByCardNo(String card_no) {
+	public String getVipCardByCardNo(String card_no, String che_no) {
 		Kehu_CardEntity kehuCard = getVipCard(card_no);
 		if (kehuCard != null) {
 			if (kehuCard.isFlag_use()) {
@@ -195,20 +195,19 @@ public class card {
 				return jsons.json(1, 1, 0, "此卡号已经到期！");
 			}
 			if (card_no != null && card_no.length() > 1) {
-				Sql sql_ = Sqls.queryRecord("SELECT isnull(flag_single,0) as flag_single  FROM cardsysset ");
+				Sql sql_ = Sqls.queryRecord("SELECT flag_single FROM cardsysset ");
 				dao.execute(sql_);
 				List<Record> res_1 = sql_.getList(Record.class);
-				String flag_single = res_1.get(0).getString("flag_single");
-				System.out.println(flag_single);
-				if("true".equals(flag_single)) {
-					Sql sql1 = Sqls
-							.queryRecord("select count(*) as cnt from kehu_card a, kehu_card_che b where a.card_no = b.card_no and flag_use  = 0 and flag_guashi = 0 and flag_enddate = 0 and isnull(flag_shoukuan,0) = 1 and b.card_no = '"
-									+ card_no + "' and b.che_no ='" + card_no + "'");
+				int flag_single = res_1.get(0).getInt("flag_single");
+				if(flag_single != 0) {
+					Sql sql1 = Sqls.queryRecord("select count(*) as cnt from kehu_card a, kehu_card_che b " +
+							"where a.card_no = b.card_no and flag_use  = 0 and flag_guashi = 0 and flag_enddate = 0 and isnull(flag_shoukuan,0) = 1 " +
+                            "and b.card_no = '" + card_no + "' and b.che_no ='" + che_no + "'");
 					dao.execute(sql1);
 					List<Record> res1 = sql1.getList(Record.class);
 					int cnt = res1.get(0).getInt("cnt");
 					if (cnt == 0)  
-						return jsons.json(1, 1, 0, "系统设置为“关联式会员制度”，此会员卡非该辆车所有,不符合条件。不能结算");
+						return jsons.json(1, 1, 0, "系统设置为“关联式会员制度”，此会员卡非该辆车所有，不能使用！");
 				}
 			}
             // 把che_no和kehu_no也返回去
