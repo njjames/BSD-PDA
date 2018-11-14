@@ -19,7 +19,7 @@
     <session id="-768783904">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="76" />
+          <entry key="project.closed" value="77" />
           <entry key="project.open.time.12" value="1" />
           <entry key="project.open.time.123" value="1" />
           <entry key="project.open.time.14" value="1" />
@@ -44,17 +44,18 @@
           <entry key="project.open.time.35" value="2" />
           <entry key="project.open.time.38" value="1" />
           <entry key="project.open.time.4" value="1" />
+          <entry key="project.open.time.44" value="1" />
           <entry key="project.open.time.47" value="1" />
           <entry key="project.open.time.5" value="1" />
           <entry key="project.open.time.6" value="1" />
           <entry key="project.open.time.7" value="1" />
-          <entry key="project.opened" value="84" />
+          <entry key="project.opened" value="85" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="class" value="6" />
-          <entry key="java" value="131" />
+          <entry key="java" value="135" />
           <entry key="js" value="7" />
           <entry key="jsp" value="1" />
           <entry key="properties" value="17" />
@@ -64,7 +65,7 @@
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="CLASS" value="6" />
-          <entry key="JAVA" value="131" />
+          <entry key="JAVA" value="135" />
           <entry key="JSP" value="1" />
           <entry key="JavaScript" value="7" />
           <entry key="Properties" value="17" />
@@ -74,14 +75,14 @@
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="dummy" value="1" />
-          <entry key="java" value="13598" />
+          <entry key="java" value="14608" />
           <entry key="properties" value="19" />
           <entry key="xml" value="4" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="JAVA" value="13598" />
+          <entry key="JAVA" value="14608" />
           <entry key="PLAIN_TEXT" value="1" />
           <entry key="Properties" value="19" />
           <entry key="XML" value="4" />
@@ -94,37 +95,26 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/org/aotu/kuixiu/module/KuaixiuModule.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="504">
-              <caret line="552" column="47" selection-start-line="552" selection-start-column="47" selection-end-line="552" selection-end-column="47" />
+            <state relative-caret-position="227">
+              <caret line="226" column="9" lean-forward="true" selection-start-line="226" selection-start-column="9" selection-end-line="226" selection-end-column="9" />
               <folding>
-                <element signature="e#24864#25229#0" expanded="true" />
-                <element signature="e#25228#25229#0" expanded="true" />
+                <element signature="e#23093#25628#0" expanded="true" />
+                <element signature="e#25627#25628#0" expanded="true" />
                 <element signature="docComment;method#jiesuan_1#0;class#KuaixiuModule#0" />
                 <element signature="method#jiesuan_1#0;class#KuaixiuModule#0" />
                 <element signature="docComment;method#jiesuan_2#0;class#KuaixiuModule#0" />
                 <element signature="method#jiesuan_2#0;class#KuaixiuModule#0" />
                 <element signature="docComment;method#jiesuan_3#0;class#KuaixiuModule#0" />
-                <element signature="e#77817#78074#0" expanded="true" />
-                <element signature="e#78073#78074#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/org/aotu/Jsons.java">
+        <entry file="file://$PROJECT_DIR$/src/org/aotu/util/BsdUtils.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="133">
-              <caret line="8" column="18" selection-start-line="8" selection-start-column="18" selection-end-line="8" selection-end-column="18" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="jar://E:/nutz相关/nutz-1.r.60-sources.jar!/org/nutz/mvc/impl/processor/MethodInvokeProcessor.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="570">
-              <caret line="36" selection-start-line="36" selection-end-line="36" />
+            <state relative-caret-position="513">
+              <caret line="57" column="25" lean-forward="true" selection-start-line="57" selection-start-column="25" selection-end-line="57" selection-end-column="25" />
             </state>
           </provider>
         </entry>
@@ -132,8 +122,21 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/aotu/publics/module/publicModule.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="210">
-              <caret line="2406" column="8" lean-forward="true" selection-start-line="2406" selection-start-column="8" selection-end-line="2409" selection-end-column="65" />
+            <state relative-caret-position="181">
+              <caret line="1694" column="27" lean-forward="true" selection-start-line="1694" selection-start-column="27" selection-end-line="1694" selection-end-column="27" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/org/aotu/publics/eneity/Work_cheliang_smEntity.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="789">
+              <caret line="209" column="16" selection-start-line="209" selection-start-column="16" selection-end-line="209" selection-end-column="16" />
+              <folding>
+                <element signature="e#4267#4268#0" expanded="true" />
+                <element signature="e#4298#4299#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -142,7 +145,7 @@
         <entry file="file://$PROJECT_DIR$/src/org/aotu/publics/eneity/Jizhang_yhdyEntity.java">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="171">
-              <caret line="13" column="28" lean-forward="true" selection-start-line="13" selection-start-column="28" selection-end-line="13" selection-end-column="28" />
+              <caret line="13" column="28" selection-start-line="13" selection-start-column="28" selection-end-line="13" selection-end-column="28" />
             </state>
           </provider>
         </entry>
@@ -150,8 +153,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/aotu/publics/eneity/Sm_jiesuanEntity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="247">
-              <caret line="14" column="25" selection-start-line="14" selection-start-column="7" selection-end-line="14" selection-end-column="25" />
+            <state relative-caret-position="95">
+              <caret line="6" column="3" selection-start-line="6" selection-start-column="3" selection-end-line="6" selection-end-column="3" />
             </state>
           </provider>
         </entry>
@@ -159,8 +162,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/aotu/VIPcard/module/card.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="493">
-              <caret line="422" column="18" selection-start-line="422" selection-start-column="18" selection-end-line="422" selection-end-column="18" />
+            <state relative-caret-position="151">
+              <caret line="404" column="25" selection-start-line="404" selection-start-column="25" selection-end-line="404" selection-end-column="25" />
               <folding>
                 <element signature="e#3333#3334#0" expanded="true" />
                 <element signature="e#3388#3389#0" expanded="true" />
@@ -172,8 +175,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/aotu/paigong/module/PaiGongModule.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="8892">
-              <caret line="496" column="18" selection-start-line="496" selection-start-column="18" selection-end-line="496" selection-end-column="18" />
+            <state relative-caret-position="116">
+              <caret line="475" column="25" selection-start-line="475" selection-start-column="25" selection-end-line="475" selection-end-column="25" />
             </state>
           </provider>
         </entry>
@@ -181,8 +184,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1330">
-              <caret line="70" column="39" selection-start-line="70" selection-start-column="39" selection-end-line="70" selection-end-column="39" />
+            <state relative-caret-position="1349">
+              <caret line="71" column="39" selection-start-line="71" selection-start-column="39" selection-end-line="71" selection-end-column="39" />
             </state>
           </provider>
         </entry>
@@ -217,6 +220,7 @@
       <find>wxxm_jifen</find>
       <find>peij_zk</find>
       <find>getList</find>
+      <find>divide</find>
     </findStrings>
   </component>
   <component name="IdeDocumentHistory">
@@ -236,9 +240,10 @@
         <option value="$PROJECT_DIR$/src/org/aotu/paigong/module/PaiGongModule.java" />
         <option value="$PROJECT_DIR$/src/org/aotu/order/entity/Work_mx_gzEntity.java" />
         <option value="$PROJECT_DIR$/src/org/aotu/order/module/ordersModule.java" />
-        <option value="$PROJECT_DIR$/src/org/aotu/util/BsdUtils.java" />
         <option value="$PROJECT_DIR$/src/org/aotu/VIPcard/module/card.java" />
         <option value="$PROJECT_DIR$/src/org/aotu/publics/eneity/Jizhang_yhdyEntity.java" />
+        <option value="$PROJECT_DIR$/src/org/aotu/util/BsdUtils.java" />
+        <option value="$PROJECT_DIR$/src/org/aotu/publics/eneity/Work_cheliang_smEntity.java" />
         <option value="$PROJECT_DIR$/src/org/aotu/publics/module/publicModule.java" />
         <option value="$PROJECT_DIR$/src/org/aotu/kuixiu/module/KuaixiuModule.java" />
       </list>
@@ -309,6 +314,7 @@
     <panes>
       <pane id="Scope" />
       <pane id="PackagesPane" />
+      <pane id="AndroidView" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -321,170 +327,10 @@
               <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="appointment" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="appointment" type="462c0819:PsiDirectoryNode" />
-              <item name="module" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="kuixiu" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="kuixiu" type="462c0819:PsiDirectoryNode" />
-              <item name="module" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="offer" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="offer" type="462c0819:PsiDirectoryNode" />
-              <item name="module" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="order" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="order" type="462c0819:PsiDirectoryNode" />
-              <item name="module" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="paigong" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="paigong" type="462c0819:PsiDirectoryNode" />
-              <item name="module" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="publics" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="publics" type="462c0819:PsiDirectoryNode" />
-              <item name="module" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="publics" type="462c0819:PsiDirectoryNode" />
-              <item name="module" type="462c0819:PsiDirectoryNode" />
-              <item name="publicModule.java" type="529ef68f:ClassesTreeStructureProvider$PsiClassOwnerTreeNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="util" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="VIPcard" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="VIPcard" type="462c0819:PsiDirectoryNode" />
-              <item name="entity" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BSD-PDA" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BSD-PDA" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="org" type="462c0819:PsiDirectoryNode" />
-              <item name="aotu" type="462c0819:PsiDirectoryNode" />
-              <item name="VIPcard" type="462c0819:PsiDirectoryNode" />
-              <item name="module" type="462c0819:PsiDirectoryNode" />
-            </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="AndroidView" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -495,9 +341,9 @@
     <property name="SearchEverywhereHistoryKey" value="CardXxy&#9;PSI&#9;JAVA://org.aotu.VIPcard.module.card#CardXxy&#10;getVipCardByCardNo&#9;PSI&#9;JAVA://org.aotu.VIPcard.module.card#getVipCardByCardNo&#10;pom.xml&#9;FILE&#9;jar://E:/IdeaProjects/BSD-PDA/WebContent/WEB-INF/lib/commons-collections-3.2.1.jar!/META-INF/maven/commons-collections/commons-collections/pom.xml&#10;SELECT * FROM sm_peijcx_new&#9;null&#9;null" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1542105736064" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1542188947653" />
     <property name="extract.method.default.visibility" value="private" />
-    <property name="last_opened_file_path" value="F:/android资料/dimens_sw-master" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../DDZ2" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="project.structure.last.edited" value="Facets" />
@@ -688,12 +534,13 @@
       <workItem from="1541843580469" duration="1822000" />
       <workItem from="1541992018343" duration="16963000" />
       <workItem from="1542017981511" duration="721000" />
-      <workItem from="1542070000998" duration="23910000" />
+      <workItem from="1542070000998" duration="23973000" />
+      <workItem from="1542155988357" duration="21211000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="366225000" />
+    <option name="totallyTimeSpent" value="387499000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -706,8 +553,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.18443497" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.09968017" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Designer" order="2" />
       <window_info id="Image Layers" order="3" />
@@ -718,7 +566,7 @@
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32925472" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.37041157" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.45272526" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.50278085" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32925472" />
@@ -726,7 +574,7 @@
       <window_info anchor="bottom" id="Java Enterprise" order="8" weight="0.32925472" />
       <window_info anchor="bottom" id="Terminal" order="9" weight="0.32925472" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
-      <window_info anchor="bottom" id="Messages" order="11" visible="true" weight="0.21134594" />
+      <window_info anchor="bottom" id="Messages" order="11" weight="0.21134594" />
       <window_info anchor="bottom" id="Database Changes" order="12" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="13" weight="0.32925472" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
@@ -746,8 +594,30 @@
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
   </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/org/aotu/publics/module/publicModule.java</url>
+          <line>247</line>
+          <properties />
+          <option name="timeStamp" value="7" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
   <component name="debuggerHistoryManager">
     <expressions id="evaluateExpression">
+      <expression>
+        <expression-string>chel.getChe_next_byrq()</expression-string>
+        <language-id>JAVA</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>chel.getChe_gcrq()</expression-string>
+        <language-id>JAVA</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
       <expression>
         <expression-string>cs.executeUpdate()</expression-string>
         <language-id>JAVA</language-id>
@@ -771,13 +641,6 @@
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/org/aotu/offer/entity/feilvEntity.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="247">
-          <caret line="14" column="29" selection-start-line="14" selection-start-column="16" selection-end-line="14" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/org/aotu/car/module/carModule.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="224">
@@ -912,13 +775,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/aotu/publics/eneity/Work_cheliang_smEntity.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="608">
-          <caret line="38" column="25" selection-start-line="38" selection-start-column="17" selection-end-line="38" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/org/aotu/offer/entity/offerEntity.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="190">
@@ -975,13 +831,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="jar://E:/nutz相关/nutz-1.r.60-sources.jar!/org/nutz/dao/Dao.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="348">
-          <caret line="838" column="11" selection-start-line="838" selection-start-column="11" selection-end-line="838" selection-end-column="11" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/org/aotu/order/module/ordersModule.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="17955">
@@ -1000,13 +849,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1805">
           <caret line="98" column="29" selection-start-line="98" selection-start-column="19" selection-end-line="98" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/aotu/util/BsdUtils.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1330">
-          <caret line="76" column="31" selection-start-line="76" selection-start-column="31" selection-end-line="76" selection-end-column="31" />
         </state>
       </provider>
     </entry>
@@ -1052,24 +894,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="jar://E:/nutz相关/nutz-1.r.60-sources.jar!/org/nutz/mvc/impl/processor/MethodInvokeProcessor.java">
+    <entry file="file://$PROJECT_DIR$/src/org/aotu/VIPcard/entity/Kehu_CardEntity.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="570">
-          <caret line="36" selection-start-line="36" selection-end-line="36" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/aotu/paigong/module/PaiGongModule.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="8892">
-          <caret line="496" column="18" selection-start-line="496" selection-start-column="18" selection-end-line="496" selection-end-column="18" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1330">
-          <caret line="70" column="39" selection-start-line="70" selection-start-column="39" selection-end-line="70" selection-end-column="39" />
+        <state relative-caret-position="-1140">
+          <caret line="22" column="26" selection-start-line="22" selection-start-column="19" selection-end-line="22" selection-end-column="26" />
         </state>
       </provider>
     </entry>
@@ -1080,31 +908,31 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/aotu/publics/eneity/Sm_jiesuanEntity.java">
+    <entry file="jar://E:/nutz相关/nutz-1.r.60-sources.jar!/org/nutz/mvc/impl/processor/MethodInvokeProcessor.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="247">
-          <caret line="14" column="25" selection-start-line="14" selection-start-column="7" selection-end-line="14" selection-end-column="25" />
+        <state relative-caret-position="570">
+          <caret line="36" selection-start-line="36" selection-end-line="36" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/aotu/publics/eneity/Jizhang_yhdyEntity.java">
+    <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="171">
-          <caret line="13" column="28" lean-forward="true" selection-start-line="13" selection-start-column="28" selection-end-line="13" selection-end-column="28" />
+        <state relative-caret-position="1349">
+          <caret line="71" column="39" selection-start-line="71" selection-start-column="39" selection-end-line="71" selection-end-column="39" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/aotu/VIPcard/entity/Kehu_CardEntity.java">
+    <entry file="jar://C:/Program Files/Java/jdk1.8.0_181/src.zip!/java/math/BigDecimal.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1140">
-          <caret line="22" column="26" selection-start-line="22" selection-start-column="19" selection-end-line="22" selection-end-column="26" />
+        <state relative-caret-position="192">
+          <caret line="1555" column="22" selection-start-line="1555" selection-start-column="22" selection-end-line="1555" selection-end-column="22" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/aotu/VIPcard/module/card.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="493">
-          <caret line="422" column="18" selection-start-line="422" selection-start-column="18" selection-end-line="422" selection-end-column="18" />
+        <state relative-caret-position="151">
+          <caret line="404" column="25" selection-start-line="404" selection-start-column="25" selection-end-line="404" selection-end-column="25" />
           <folding>
             <element signature="e#3333#3334#0" expanded="true" />
             <element signature="e#3388#3389#0" expanded="true" />
@@ -1112,27 +940,71 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/aotu/paigong/module/PaiGongModule.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="116">
+          <caret line="475" column="25" selection-start-line="475" selection-start-column="25" selection-end-line="475" selection-end-column="25" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/aotu/publics/eneity/Sm_jiesuanEntity.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="95">
+          <caret line="6" column="3" selection-start-line="6" selection-start-column="3" selection-end-line="6" selection-end-column="3" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/aotu/publics/eneity/Jizhang_yhdyEntity.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="171">
+          <caret line="13" column="28" selection-start-line="13" selection-start-column="28" selection-end-line="13" selection-end-column="28" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/aotu/util/BsdUtils.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="513">
+          <caret line="57" column="25" lean-forward="true" selection-start-line="57" selection-start-column="25" selection-end-line="57" selection-end-column="25" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://E:/nutz相关/nutz-1.r.60-sources.jar!/org/nutz/dao/Dao.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="348">
+          <caret line="264" column="8" selection-start-line="264" selection-start-column="8" selection-end-line="264" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/aotu/publics/eneity/Work_cheliang_smEntity.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="789">
+          <caret line="209" column="16" selection-start-line="209" selection-start-column="16" selection-end-line="209" selection-end-column="16" />
+          <folding>
+            <element signature="e#4267#4268#0" expanded="true" />
+            <element signature="e#4298#4299#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/org/aotu/publics/module/publicModule.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="210">
-          <caret line="2406" column="8" lean-forward="true" selection-start-line="2406" selection-start-column="8" selection-end-line="2409" selection-end-column="65" />
+        <state relative-caret-position="181">
+          <caret line="1694" column="27" lean-forward="true" selection-start-line="1694" selection-start-column="27" selection-end-line="1694" selection-end-column="27" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/aotu/kuixiu/module/KuaixiuModule.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="504">
-          <caret line="552" column="47" selection-start-line="552" selection-start-column="47" selection-end-line="552" selection-end-column="47" />
+        <state relative-caret-position="227">
+          <caret line="226" column="9" lean-forward="true" selection-start-line="226" selection-start-column="9" selection-end-line="226" selection-end-column="9" />
           <folding>
-            <element signature="e#24864#25229#0" expanded="true" />
-            <element signature="e#25228#25229#0" expanded="true" />
+            <element signature="e#23093#25628#0" expanded="true" />
+            <element signature="e#25627#25628#0" expanded="true" />
             <element signature="docComment;method#jiesuan_1#0;class#KuaixiuModule#0" />
             <element signature="method#jiesuan_1#0;class#KuaixiuModule#0" />
             <element signature="docComment;method#jiesuan_2#0;class#KuaixiuModule#0" />
             <element signature="method#jiesuan_2#0;class#KuaixiuModule#0" />
             <element signature="docComment;method#jiesuan_3#0;class#KuaixiuModule#0" />
-            <element signature="e#77817#78074#0" expanded="true" />
-            <element signature="e#78073#78074#0" expanded="true" />
           </folding>
         </state>
       </provider>

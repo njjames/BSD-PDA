@@ -61,6 +61,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.nutz.trans.Atom;
+import org.nutz.trans.Trans;
 
 /**
  * @author 刘宏德
@@ -118,7 +120,6 @@ public class KuaixiuModule {
             dao.execute(sql0_3);
             BigDecimal pjJF = (BigDecimal) dao.func2(Work_ll_gzEntity.class, "sum", "peij_jifen",
                     Cnd.where("work_no", "=", pz.getWork_no()).and("peij_zt", "=", "正常"));
-
             Sql sql0_4 = Sqls
                     .create("update b set b.wxxm_jifenlv=isnull(a.wxxm_jifenlv,0) from work_weixiu_sm a ,work_mx_gz b where work_no='" + pz.getWork_no() + "' and a.wxxm_no=b.wxxm_no");
             dao.execute(sql0_4);
@@ -127,9 +128,13 @@ public class KuaixiuModule {
             dao.execute(sql0_5);
             BigDecimal xmJF = (BigDecimal) dao.func2(Work_mx_gzEntity.class, "sum", "wxxm_jifen",
                     Cnd.where("work_no", "=", pz.getWork_no()).and("wxxm_zt", "=", "正常"));
-            Sql sql0_6 = Sqls
-                    .create("update work_pz_gz set work_jifen_sum= " + pjJF.add(xmJF) + " where work_no='" + pz.getWork_no() + "'");
-            dao.execute(sql0_6);
+            if (pjJF != null && xmJF != null) {
+                dao.execute(Sqls.create("update work_pz_gz set work_jifen_sum= " + pjJF.add(xmJF) + " where work_no='" + pz.getWork_no() + "'"));
+            } else if (pjJF != null) {
+                dao.execute(Sqls.create("update work_pz_gz set work_jifen_sum= " + pjJF + " where work_no='" + pz.getWork_no() + "'"));
+            } else if (xmJF != null) {
+                dao.execute(Sqls.create("update work_pz_gz set work_jifen_sum= " + xmJF + " where work_no='" + pz.getWork_no() + "'"));
+            }
         }
         BsdUtils.updateWorkPzGz(dao, pz.getWork_no());
         return "success";
@@ -143,9 +148,11 @@ public class KuaixiuModule {
     @At
     @Ok("raw:json")
     public String mrkxJbxx(String che_no, String gongsiNo, String caozuoyuan_xm, String work_no) {
+        Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, che_no);
         Work_pz_gzEntity pz = new Work_pz_gzEntity();
         if (!"".equals(work_no)) {
             pz = dao.fetch(Work_pz_gzEntity.class, work_no);
+            pz.setGcsj(che.getChe_gcrq());
         } else {
             if (gongsiNo == null || caozuoyuan_xm == null) {
                 return jsons.json(1, 1, 0, "公司编号或操作员不能为空");
@@ -183,13 +190,11 @@ public class KuaixiuModule {
                 pz.setFlag_pad(true);
                 pz.setFlag_fast(true);
                 // 设置草稿单上车辆和客户的信息
-                Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, che_no);
                 if (che != null) {
                     pz.setChe_cx(che.getChe_cx());
                     pz.setChe_vin(che.getChe_vin());
                     pz.setGcsj(che.getChe_gcrq());
                     pz.setXche_lc(che.getChe_next_licheng());
-                    System.out.println("======================" + che.getKehu_no());
                     KehuEntity kehu = dao.fetch(KehuEntity.class, che.getKehu_no());
                     if (kehu != null) {
                         pz.setKehu_mc(kehu.getKehu_mc());
@@ -201,6 +206,7 @@ public class KuaixiuModule {
                 dao.updateIgnoreNull(pz);
             } else {
                 pz = result.get(0);
+                pz.setGcsj(che.getChe_gcrq());
             }
             // 查询仓库，准备获取名字
             Sql sql1 = Sqls
@@ -511,15 +517,17 @@ public class KuaixiuModule {
         if (totalYhje.subtract(totalje.multiply(xiaoYhlv)).compareTo(BigDecimal.ZERO) > 0) {
             return "fail";
         }
-        Sql sql1 = Sqls.create("update work_pz_gz set xche_wxxm_yhje=" + xmYhje.toString() + ",xche_peij_yhje=" + clYhje.toString() + ",xche_yhje" + totalYhje.toString() +
+        Sql sql1 = Sqls.create("update work_pz_gz set xche_wxxm_yhje=" + xmYhje.toString() + ",xche_peij_yhje=" + clYhje.toString() + ",xche_yhje=" + totalYhje.toString() +
                 " where work_no= '" + work_no + "'");
         dao.execute(sql1);
         return "success";
     }
 
-    public String realJiesuan(String work_no, String card_no, int iscard, String xche_ssje, String zhifu_card_je,
-                              String zhifu_card_xj, String xche_jsfs, String yh_zhanghao, String caozuoyuan_xm,
-                              int sys_baoyang_che_fs, int isNextTx, String next_bylc, String next_byrq, String che_no) {
+    @At
+    @Ok("raw:json")
+    public String realJiesuan(final String work_no, final String card_no, final int iscard, final String xche_ssje, String zhifu_card_je,
+                              final String zhifu_card_xj, String xche_jsfs, String yh_zhanghao, final String caozuoyuan_xm,
+                              final int sys_baoyang_che_fs, final int isNextTx, final String next_bylc, final String next_byrq, final String che_no) {
         // 如果没有设置账号，默认是现金
         if (yh_zhanghao == null || yh_zhanghao.equals("")) {
             yh_zhanghao = "现金";
@@ -545,6 +553,100 @@ public class KuaixiuModule {
                     " where work_no = '" + work_no + "' ");
         }
         dao.execute(sql1);
+        // 更新付款单位
+        updateFkdw(work_no);
+        Trans.exec(new Atom() {
+            @Override
+            public void run() {
+                // 更新下次保养信息
+                updateNextTx(work_no, che_no, sys_baoyang_che_fs, isNextTx, next_bylc, next_byrq);
+                // 插入work_pz_sj
+                insertWorkPzSj(work_no);
+                // 插入work_pz_sj_ls
+                insertWorkPzSjLs(work_no);
+                // 插入work_mx_sj
+                insertWorkMxSj(work_no);
+                // 插入work_mx_sj_ls
+                insertWorkMxSjLs(work_no);
+                // 插入work_wjg_sj
+                insertWorkWjgSj(work_no);
+                // 插入check_mx_sj
+                insertCheckMxSj(work_no);
+                // 插入work_ll_sj
+                insertWorkLlSj(work_no);
+                // 插入work_ll_sj_ls
+                insertWorkLlSjLs(work_no);
+                // 插入Work_Pg_Sj
+                insertWorkPgSj(work_no);
+                // 执行Wx_lingliao_chuku的存储过程
+                if (callReturnValueProc("Wx_lingliao_chuku('" + work_no + "')") != 0) {
+                    throw new RuntimeException("结算失败，存储过程--出库出错！");
+                }
+                // 执行wx_weixiu_kuan的存储过程
+                if (callReturnValueProc("wx_weixiu_kuan('" + work_no + "')") != 0) {
+                    throw new RuntimeException("结算失败，存储过程--收款出错！");
+                }
+                // 执行wx_weixiu_piao的存储过程
+                if (callReturnValueProc("wx_weixiu_piao('" + work_no + "')") != 0) {
+                    throw new RuntimeException("结算失败，存储过程--开票出错！");
+                }
+                dao.execute(Sqls.create("update work_yuyue_pz set yuyue_progress='已离店' where work_no='" + work_no + "'"));
+                // 处理日记账
+                updateRiJizhang(work_no, iscard, xche_ssje, zhifu_card_xj);
+                // 处理会员卡积分，如果是储值卡结算，则积分到储值卡
+                if (iscard == 1) {
+                    updateCardJifen(work_no, card_no, xche_ssje, caozuoyuan_xm);
+                }
+                // 减去会员卡（单据中的会员卡）中的特殊项目
+                Sql sql8 = Sqls.queryRecord("select card_no from work_pz_sj where work_no='" + work_no + "'");
+                dao.execute(sql8);
+                List<Record> res1 = sql8.getList(Record.class);
+                String cardNo = res1.get(0).getString("card_no");
+                if (cardNo != null && !"".equals(card_no)) {
+                    updateCardSpecialCS(work_no, cardNo);
+                    if (iscard == 0) {
+                        updateCardJifen(work_no, cardNo, xche_ssje, caozuoyuan_xm);
+                    }
+                }
+            }
+        });
+        return "success";
+    }
+
+    private void updateFkdw(String work_no) {
+        dao.execute(Sqls.create("delete from work_fkdw_list where work_no = '" + work_no + "'"));
+        dao.execute(Sqls.create("insert into work_fkdw_list(work_no,kehu_no,che_no,xche_fkdw_no,xche_fkdw_mc,xche_ysje,xche_ssje,xche_yhje,xche_yeje)" +
+                "select work_no,kehu_no,che_no,kehu_no,kehu_mc,xche_ysje,xche_ssje,xche_yhje,xche_yeje " +
+                "from work_pz_gz where work_no='" + work_no + "'"));
+    }
+
+    private void updateRiJizhang(String work_no, int iscard, String xche_ssje, String zhifu_card_xj) {
+        // 处理日记账
+        BigDecimal ssje = new BigDecimal(xche_ssje);
+        // 如果不是会员卡支付，并且实收金额不为0
+        if (iscard == 0 && ssje.compareTo(BigDecimal.ZERO) != 0) {
+            Sql sql4 = Sqls.create(
+                    "insert into jizhang_xjmx(" +
+                            "kehu_no,yewu_jsfs,jizhang_name,jizhang_pz,jizhang_km,jizhang_jf,jizhang_rq,jizhang_jb,jizhang_cz,jizhang_bz,yewu_dh,yewu_xz,GongSiNo,GongSiMc)" +
+                            "select kehu_no,xche_jsfs,yh_zhanghao,work_no,case yh_zhanghao when '现金' then '101' else '102' end,xche_ssje,getdate(),xche_jb,xche_cz,'收维修款（PAD）',work_no,'2007',gongsino,gongsimc " +
+                            "from work_pz_sj where work_no='" + work_no + "'"
+            );
+            dao.execute(sql4);
+        }
+        // 如果补现金不为0，则插入日记账
+        BigDecimal buxj = new BigDecimal(zhifu_card_xj);
+        if (buxj.compareTo(BigDecimal.ZERO) != 0) {
+            Sql sql5 = Sqls.create(
+                    "insert into jizhang_xjmx(" +
+                            "kehu_no,yewu_jsfs,jizhang_name,jizhang_pz,jizhang_km,jizhang_jf,jizhang_rq,jizhang_jb,jizhang_cz,jizhang_bz,yewu_dh,yewu_xz,GongSiNo,GongSiMc)" +
+                            "select kehu_no,xche_jsfs,yh_zhanghao,work_no,case yh_zhanghao when '现金' then '101' else '102' end,zhifu_card_xj,getdate(),xche_jb,xche_cz,'收维修款补现金（PAD）',work_no,'2007',gongsino,gongsimc " +
+                            "from work_pz_sj where work_no='" + work_no + "'"
+            );
+            dao.execute(sql5);
+        }
+    }
+
+    private void updateNextTx(String work_no, String che_no, int sys_baoyang_che_fs, int isNextTx, String next_bylc, String next_byrq) {
         // 处理下次保养信息
         if (sys_baoyang_che_fs == 1) {
             if (isNextTx == 1) {
@@ -558,88 +660,38 @@ public class KuaixiuModule {
                 }
             }
         } else {
-            // TODO
-        }
-        Sql sql2 = Sqls.create("delete from work_fkdw_list where work_no = '" + work_no + "'");
-        dao.execute(sql2);
-        Sql sql3 = Sqls.create("insert into work_fkdw_list(work_no,kehu_no,che_no,xche_fkdw_no,xche_fkdw_mc,xche_ysje,xche_ssje,xche_yhje,xche_yeje)" +
-                "select work_no,kehu_no,che_no,kehu_no,kehu_mc,xche_ysje,xche_ssje,xche_yhje,xche_yeje " +
-                "from work_pz_gz where work_no='" + work_no + "'");
-        dao.execute(sql3);
-        // 插入work_pz_sj
-        insertWorkPzSj(work_no);
-        // 插入work_pz_sj_ls
-        insertWorkPzSjLs(work_no);
-        // 插入work_mx_sj
-        insertWorkMxSj(work_no);
-        // 插入work_mx_sj_ls
-        insertWorkMxSjLs(work_no);
-        // 插入work_wjg_sj
-        insertWorkWjgSj(work_no);
-        // 插入check_mx_sj
-        insertCheckMxSj(work_no);
-        // 插入work_ll_sj
-        insertWorkLlSj(work_no);
-        // 插入work_ll_sj_ls
-        insertWorkLlSjLs(work_no);
-        // 插入Work_Pg_Sj
-        insertWorkPgSj(work_no);
-        // 执行Wx_lingliao_chuku的存储过程
-        if (callReturnValueProc("Wx_lingliao_chuku('" + work_no + "')") != 0) {
-            return jsons.json(1, 1, 0, "结算失败，存储过程--出库出错！");
-        }
-        // 执行wx_weixiu_kuan的存储过程
-        if (callReturnValueProc("wx_weixiu_kuan('" + work_no + "')") != 0) {
-            return jsons.json(1, 1, 0, "结算失败，存储过程--收款出错！");
-        }
-        // 执行wx_weixiu_piao的存储过程
-        if (callReturnValueProc("wx_weixiu_piao('" + work_no + "')") != 0) {
-            return jsons.json(1, 1, 0, "结算失败，存储过程--开票出错！");
-        }
-        dao.execute(Sqls.create("update work_yuyue_pz set yuyue_progress='已离店' where work_no='" + work_no + "'"));
-        // 处理日记账
-        BigDecimal ssje = new BigDecimal(xche_ssje);
-        // 如果不是会员卡支付，并且实收金额不为0
-        if (iscard == 0 && ssje.compareTo(BigDecimal.ZERO) != 0) {
-            Sql sql4 = Sqls.create(
-                    "insert into jizhang_xjmx(" +
-                            "kehu_no,yewu_jsfs,jizhang_name,jizhang_pz,jizhang_km,jizhang_jf,jizhang_rq,jizhang_jb,jizhang_cz,jizhang_bz,yewu_dh,yewu_xz,GongSiNo,GongSiMc)" +
-                    "select kehu_no,xche_jsfs,yh_zhanghao,work_no,case yh_zhanghao when '现金' then '101' else '102' end,xche_ssje,getdate(),xche_jb,xche_cz,'收维修款（PAD）',work_no,'2007',gongsino,gongsimc " +
-                            "from work_pz_gz where work_no='" + work_no + "'"
-            );
-            dao.execute(sql4);
-        }
-        // 如果补现金不为0，则插入日记账
-        BigDecimal buxj = new BigDecimal(zhifu_card_xj);
-        if (buxj.compareTo(BigDecimal.ZERO) != 0) {
-            Sql sql5 = Sqls.create(
-                    "insert into jizhang_xjmx(" +
-                            "kehu_no,yewu_jsfs,jizhang_name,jizhang_pz,jizhang_km,jizhang_jf,jizhang_rq,jizhang_jb,jizhang_cz,jizhang_bz,yewu_dh,yewu_xz,GongSiNo,GongSiMc)" +
-                    "select kehu_no,xche_jsfs,yh_zhanghao,work_no,case yh_zhanghao when '现金' then '101' else '102' end,zhifu_card_xj,getdate(),xche_jb,xche_cz,'收维修款补现金（PAD）',work_no,'2007',gongsino,gongsimc " +
-                            "from work_pz_gz where work_no='" + work_no + "'"
-            );
-            dao.execute(sql5);
-        }
-        // 处理会员卡积分，如果是储值卡结算，则积分到储值卡
-        if (iscard == 1) {
-            updateCardJifen(work_no, card_no, xche_ssje, caozuoyuan_xm);
-        }
-        // 减去会员卡（单据中的会员卡）中的特殊项目
-        Sql sql8 = Sqls.queryRecord("select card_no from work_pz_gz where work_no='" + work_no + "'");
-        dao.execute(sql8);
-        List<Record> res1 = sql8.getList(Record.class);
-        String cardNo = res1.get(0).getString("card_no");
-        if (cardNo != null && !"".equals(card_no)) {
-            updateCardSpecialCS(work_no, cardNo);
-            if (iscard == 0) {
-                updateCardJifen(work_no, cardNo, xche_ssje, caozuoyuan_xm);
+            Sql sql11 = Sqls.queryRecord("select count(*) as cnt from (" +
+                    "select 1 as a from work_mx_sj where work_no='" + work_no + "' and wxxm_no in (select wxxm_no from work_weixiu_sm where isnull(wxxm_by,0)=1) " +
+                    "union select 1 as a from work_mx_gz where work_no='" + work_no + "' and wxxm_no in (select wxxm_no from work_weixiu_sm where isnull(wxxm_by,0)=1)) a");
+            dao.execute(sql11);
+            List<Record> res11 = sql11.getList(Record.class);
+            int cnt = res11.get(0).getInt("cnt");
+            if (cnt > 0) {
+                Sql sql12 = Sqls.queryRecord("select convert(varchar(10),isnull(che_next_byrq,getdate()),120) che_next_byrq,che_baoyanglicheng,che_next_licheng,che_rjlc " +
+                        "from work_cheliang_sm where che_no='" + che_no + "'");
+                dao.execute(sql12);
+                List<Record> res12 = sql12.getList(Record.class);
+                if (res12.size() > 0) {
+                    String cheNextByrq = res12.get(0).getString("che_next_byrq");
+                    BigDecimal cheBaoyanglicheng = new BigDecimal(res12.get(0).getString("che_baoyanglicheng"));
+                    BigDecimal cheNextLicheng = new BigDecimal(res12.get(0).getString("che_next_licheng"));
+                    BigDecimal cheRjlc = new BigDecimal(res12.get(0).getString("che_rjlc"));
+                    if (cheNextByrq != null && !"".equals(cheNextByrq)
+                            && cheRjlc.compareTo(BigDecimal.ZERO) != 0
+                            && cheBaoyanglicheng.compareTo(BigDecimal.ZERO) != 0) {
+                        int cheNextDays = cheBaoyanglicheng.divide(cheRjlc, 2, BigDecimal.ROUND_HALF_UP).intValue();
+                        dao.execute(Sqls.create("update work_cheliang_sm set flag_notsendmsg=0,che_prior_byrq=che_next_byrq,che_prior_licheng=" + cheNextLicheng.toString() +
+                                ",che_next_byrq=DATEADD(day," + cheNextDays + ",getdate()),che_next_licheng=isnull(che_prior_licheng,0)+" + cheBaoyanglicheng.toString() +
+                                " where che_no='" + che_no + "'"));
+                    }
+                }
             }
         }
-        return jsons.json(1, 1, 1, "结算成功");
     }
 
     /**
      * 更新会员卡积分信息
+     *
      * @param work_no
      * @param card_no
      * @param xche_ssje
@@ -654,7 +706,7 @@ public class KuaixiuModule {
         int Card_JifenType = res.get(0).getInt("Card_JifenType");
         BigDecimal cardJifenLv = new BigDecimal(res.get(0).getString("Card_JifenLv"));
         if (Card_JifenType == 0) { // 按商品积分率
-            Sql sql7 = Sqls.queryRecord("select work_jifen_sum from work_pz_gz where work_no='" + work_no + "'");
+            Sql sql7 = Sqls.queryRecord("select work_jifen_sum from work_pz_sj where work_no='" + work_no + "'");
             dao.execute(sql7);
             List<Record> res1 = sql7.getList(Record.class);
             BigDecimal workJifenSum = new BigDecimal(res1.get(0).getString("work_jifen_sum"));
@@ -685,6 +737,7 @@ public class KuaixiuModule {
 
     /**
      * 更新特殊项目次数
+     *
      * @param work_no
      * @param cardNo
      */
@@ -713,16 +766,18 @@ public class KuaixiuModule {
             BigDecimal peijSl = new BigDecimal(record.getString("peij_sl"));
             Sql sql12 = Sqls
                     .queryRecord("select isnull(peij_card_sl,0)-isnull(peij_card_yqsl,0) as canusesl " +
-                            "from kehu_carddetail where card_no='" + cardNo + "' and peij_no='" + peij_no + "' and peij_card_sl>wxxm_yqcs");
+                            "from kehu_carddetailpeij where card_no='" + cardNo + "' and peij_no='" + peij_no + "' and peij_card_sl>peij_card_yqsl");
             dao.execute(sql12);
             List<Record> res2 = sql12.getList(Record.class);
-            BigDecimal canusesl = new BigDecimal(res2.get(0).getString("canusesl"));
-            if (canusesl.subtract(peijSl).compareTo(BigDecimal.ZERO) >= 0) {
-                dao.execute(Sqls.create("update kehu_carddetail set peij_card_yqsl=peij_card_yqsl+" + peijSl.toString() + " where card_no='" + cardNo + "' and peij_no='" + peij_no + "'"));
-                dao.execute(Sqls.create("update work_ll_sj set Flag_peijcardSL=" + peijSl.toString() + " where work_no ='" + work_no + "' and peij_no='" + peij_no + "'"));
-            } else {
-                dao.execute(Sqls.create("update kehu_carddetail set peij_card_yqsl=peij_card_sl where card_no='" + cardNo + "' and peij_no='" + peij_no + "'"));
-                dao.execute(Sqls.create("update work_ll_sj set Flag_peijcardSL=" + canusesl.toString() + " where work_no ='" + work_no + "' and peij_no='" + peij_no + "'"));
+            if (res2.size() > 0) {
+                BigDecimal canusesl = new BigDecimal(res2.get(0).getString("canusesl"));
+                if (canusesl.subtract(peijSl).compareTo(BigDecimal.ZERO) >= 0) {
+                    dao.execute(Sqls.create("update kehu_carddetailpeij set peij_card_yqsl=peij_card_yqsl+" + peijSl.toString() + " where card_no='" + cardNo + "' and peij_no='" + peij_no + "'"));
+                    dao.execute(Sqls.create("update work_ll_sj set Flag_peijcardSL=" + peijSl.toString() + " where work_no ='" + work_no + "' and peij_no='" + peij_no + "'"));
+                } else {
+                    dao.execute(Sqls.create("update kehu_carddetailpeij set peij_card_yqsl=peij_card_sl where card_no='" + cardNo + "' and peij_no='" + peij_no + "'"));
+                    dao.execute(Sqls.create("update work_ll_sj set Flag_peijcardSL=" + canusesl.toString() + " where work_no ='" + work_no + "' and peij_no='" + peij_no + "'"));
+                }
             }
 
         }
@@ -1720,88 +1775,73 @@ public class KuaixiuModule {
     @At
     @Ok("raw:json")
     public void kxweixin(String work_no) throws Exception {
-        Sql sql126 = Sqls
-                .queryRecord("select Option_Value from Option_List where Option_NO = 3025");
+        Sql sql126 = Sqls.queryRecord("select Option_Value from Option_List where Option_NO = 3025");
         dao.execute(sql126);
         List<Record> res = sql126.getList(Record.class);
         String Option_Value = res.get(0).getString("Option_Value");
-
         if ("1".equals(Option_Value)) {
             String json = pu.getWeXinDiZhi();
             JsonParser parse = new JsonParser(); // 创建json解析器
-
             JsonObject js = (JsonObject) parse.parse(json); // 创建jsonObject对象
             JsonArray array = js.get("data").getAsJsonArray();
-
-
             JsonObject subObject = array.get(0).getAsJsonObject();
             String sys_weixindizhi = subObject.get("sys_weixindizhi").getAsString();
-
-            System.out.println(sys_weixindizhi);
-            if (sys_weixindizhi != null && sys_weixindizhi != "") {
+            if (sys_weixindizhi != null && !"".equals(sys_weixindizhi)) {
                 sys_weixindizhi += "/WS/ws_pub.asmx/GetDogDaoQi";
-                HttpClient httpCLient = new DefaultHttpClient();
                 HttpGet httpget = new HttpGet(sys_weixindizhi);
-
                 // 配置请求信息（请求时间）
                 RequestConfig rc = RequestConfig.custom().setSocketTimeout(5000)
                         .setConnectTimeout(5000).build();
+                httpget.setConfig(rc);
                 // 获取使用DefaultHttpClient对象
                 CloseableHttpClient httpclient = HttpClients.createDefault();
                 // 返回结果
                 String result = "";
+                CloseableHttpResponse response = null;
                 try {
-                    if (sys_weixindizhi != null) {
-                        // 创建HttpGet对象，将URL通过构造方法传入HttpGet对象
-                        HttpPost httpget1 = new HttpPost(sys_weixindizhi);
-                        // 将配置好请求信息附加到http请求中;
-                        httpget.setConfig(rc);
-                        // 执行DefaultHttpClient对象的execute方法发送GET请求，通过CloseableHttpResponse接口的实例，可以获取服务器返回的信息
-                        CloseableHttpResponse response = httpclient.execute(httpget1);
-
-                        try {
-                            // 得到返回对象
-                            HttpEntity entity = response.getEntity();
-                            if (entity != null) {
-                                // 获取返回结果
-                                result = EntityUtils.toString(entity);
-                                int i = result.length();
-                                result = result.substring(result.length() - 19, i - 9);//截取两个数字之间的部分
-                                System.out.println(result);
-                                SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd");
-                                Date de = new Date();
-                                String string = date.format(de);
-                                Date date2 = date.parse(result);
-                                Date date3 = date.parse(string);
-                                System.out.println(date2 + "====" + date3);
-                                if (date2.getTime() > date3.getTime()) {
-                                    Sql sql121 = Sqls
-                                            .queryRecord("select  * from work_pz_sj where work_no = '"
-                                                    + work_no + "'");
-                                    dao.execute(sql121);
-                                    List<Record> res126 = sql121.getList(Record.class);
-                                    System.out.println(res126.size());
-                                    if (res126.size() > 0) {
-                                        String che_no = res126.get(0).getString("che_no");
-                                        String gongsino = res126.get(0).getString("gongsino");
-                                        String xche_jsrq = res126.get(0).getString("xche_jsrq");
-                                        String zhifu_card_no = res126.get(0).getString("zhifu_card_no");
-                                        String xche_jb = res126.get(0).getString("xche_jb");
-                                        String card_no = res126.get(0).getString("card_no");
-                                        String xche_ysje = res126.get(0).getString("xche_ysje");
-                                        //String xche_jcr = res126.get(0).getString("xche_jcr");
-                                        Map<String, Object> map = new HashMap<String, Object>();
-                                        map.put("list_code", "105");
-                                        map.put("tm_type", "wt_WeiXiuJieSuan");
-                                        map.put("gongsino", gongsino);
-                                        map.put("che_no", che_no);
-                                        map.put("card_no", card_no);
-                                        map.put("zhifu_card_no", zhifu_card_no);
-                                        map.put("cardinfo", "");
-                                        map.put("xche_jsrq", xche_jsrq);
-                                        map.put("xche_jb", xche_jb);
-                                        map.put("xche_ysje", xche_ysje);
-                                        map.put("work_no", work_no);
+                    // 执行DefaultHttpClient对象的execute方法发送GET请求，通过CloseableHttpResponse接口的实例，可以获取服务器返回的信息
+                    response = httpclient.execute(httpget);
+                    // 得到返回对象
+                    HttpEntity entity = response.getEntity();
+                    if (entity != null) {
+                        // 获取返回结果
+                        result = EntityUtils.toString(entity);
+                        int i = result.length();
+                        result = result.substring(result.length() - 19, i - 9);//截取两个数字之间的部分
+                        System.out.println(result);
+                        SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd");
+                        Date de = new Date();
+                        String string = date.format(de);
+                        Date date2 = date.parse(result);
+                        Date date3 = date.parse(string);
+                        System.out.println(date2 + "====" + date3);
+                        if (date2.getTime() > date3.getTime()) {
+                            Sql sql121 = Sqls
+                                    .queryRecord("select  * from work_pz_sj where work_no = '" + work_no + "'");
+                            dao.execute(sql121);
+                            List<Record> res126 = sql121.getList(Record.class);
+                            System.out.println(res126.size());
+                            if (res126.size() > 0) {
+                                String che_no = res126.get(0).getString("che_no");
+                                String gongsino = res126.get(0).getString("gongsino");
+                                String xche_jsrq = res126.get(0).getString("xche_jsrq");
+                                String zhifu_card_no = res126.get(0).getString("zhifu_card_no");
+                                String xche_jb = res126.get(0).getString("xche_jb");
+                                String card_no = res126.get(0).getString("card_no");
+                                String xche_ysje = res126.get(0).getString("xche_ysje");
+                                //String xche_jcr = res126.get(0).getString("xche_jcr");
+                                Map<String, Object> map = new HashMap<String, Object>();
+                                map.put("list_code", "105");
+                                map.put("tm_type", "wt_WeiXiuJieSuan");
+                                map.put("gongsino", gongsino);
+                                map.put("che_no", che_no);
+                                map.put("card_no", card_no);
+                                map.put("zhifu_card_no", zhifu_card_no);
+                                map.put("cardinfo", "");
+                                map.put("xche_jsrq", xche_jsrq);
+                                map.put("xche_jb", xche_jb);
+                                map.put("xche_ysje", xche_ysje);
+                                map.put("work_no", work_no);
 			            					/*map.put("list_code", "105");
 			            					map.put("tm_type", "wt_WeiXiuJieSuan");
 			            					map.put("gongsino", "01");
@@ -1813,57 +1853,47 @@ public class KuaixiuModule {
 			            					map.put("xche_jb", "");
 			            					map.put("xche_ysje", "100");
 			            					map.put("work_no", "WX0120170900007");*/
-                                        String json1 = new Gson().toJson(map);
-
-                                        json1 = "strJson=" + json1;
-                                        String lujing = sys_weixindizhi + "/PadWeiXin/CssWeiXinAction.ashx";
-                                        //lujing="http://wdwx84.weixin.comtg.cn/PadWeiXin/CssWeiXinAction.ashx";
-                                        System.out.println(json1);
-                                        System.out.println(lujing);
-
-                                        byte[] data = json1.getBytes();
-                                        java.net.URL url = new java.net.URL(lujing);
-                                        System.out.println(url);
-                                        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-                                        conn.setRequestMethod("POST");
-                                        conn.setConnectTimeout(5 * 1000);// 设置连接超时时间为5秒
-                                        conn.setReadTimeout(20 * 1000);// 设置读取超时时间为20秒
-                                        // 使用 URL 连接进行输出，则将 DoOutput标志设置为 true
-                                        conn.setDoOutput(true);
-
+                                String json1 = new Gson().toJson(map);
+                                json1 = "strJson=" + json1;
+                                String lujing = sys_weixindizhi + "/PadWeiXin/CssWeiXinAction.ashx";
+                                System.out.println(json1);
+                                System.out.println(lujing);
+                                byte[] data = json1.getBytes();
+                                java.net.URL url = new java.net.URL(lujing);
+                                System.out.println(url);
+                                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                                conn.setRequestMethod("POST");
+                                conn.setConnectTimeout(5 * 1000);// 设置连接超时时间为5秒
+                                conn.setReadTimeout(20 * 1000);// 设置读取超时时间为20秒
+                                // 使用 URL 连接进行输出，则将 DoOutput标志设置为 true
+                                conn.setDoOutput(true);
 //			            			        conn.setRequestProperty("Content-Type", "text/xml;charset=UTF-8");  
-                                        // conn.setRequestProperty("Content-Encoding","gzip");
-                                        conn.setRequestProperty("Content-Length", String.valueOf(data.length));
-                                        OutputStream outStream = conn.getOutputStream();// 返回写入到此连接的输出流
-                                        outStream.write(data);
-                                        outStream.close();// 关闭流
-                                        String msg = "";// 保存调用http服务后的响应信息
-                                        // 如果请求响应码是200，则表示成功
-                                        if (conn.getResponseCode() == 200) {
-                                            // HTTP服务端返回的编码是UTF-8,故必须设置为UTF-8,保持编码统一,否则会出现中文乱码
-                                            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
-                                            msg = in.readLine();
-                                            in.close();
-                                            System.out.println(msg);
-                                        }
-                                        conn.disconnect();// 断开连接
-                                        System.out.println(msg);
-                                    }
-
+                                // conn.setRequestProperty("Content-Encoding","gzip");
+                                conn.setRequestProperty("Content-Length", String.valueOf(data.length));
+                                OutputStream outStream = conn.getOutputStream();// 返回写入到此连接的输出流
+                                outStream.write(data);
+                                outStream.close();// 关闭流
+                                String msg = "";// 保存调用http服务后的响应信息
+                                // 如果请求响应码是200，则表示成功
+                                if (conn.getResponseCode() == 200) {
+                                    // HTTP服务端返回的编码是UTF-8,故必须设置为UTF-8,保持编码统一,否则会出现中文乱码
+                                    BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
+                                    msg = in.readLine();
+                                    in.close();
                                 }
-
+                                conn.disconnect();// 断开连接
+                                System.out.println(msg);
                             }
-                        } finally {
-                            // 关闭到客户端的连接
-                            response.close();
                         }
                     }
-                } catch (ClientProtocolException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
                     try {
+                        // 关闭到客户端的连接
+                        if (response != null) {
+                            response.close();
+                        }
                         // 关闭http请求
                         httpclient.close();
                     } catch (IOException e) {
@@ -2133,7 +2163,7 @@ public class KuaixiuModule {
      */
     @At
     @Ok("raw:json")
-    public String getBillJieSuanInfo(String card_no, String work_no) {
+    public String getBillJieSuanInfo(String card_no, String work_no, String che_no) {
         HashMap<String, String> map = new HashMap<>();
         Sql sql = Sqls.queryRecord("select xche_wxxm_yhje,xche_peij_yhje,xche_hjje from work_pz_gz where work_no='" + work_no + "'");
         dao.execute(sql);
@@ -2155,15 +2185,25 @@ public class KuaixiuModule {
         }
         Sql sql2 = Sqls.queryRecord("select sys_baoyang_che_fs from sm_system_info");
         dao.execute(sql2);
-        List<Record> list2= sql2.getList(Record.class);
+        List<Record> list2 = sql2.getList(Record.class);
         int sysBaoyangCheFs = list2.get(0).getInt("sys_baoyang_che_fs");
         map.put("sys_baoyang_che_fs", "" + sysBaoyangCheFs);
+
+        Sql sql3 = Sqls.queryRecord("select isnull(che_next_licheng,0) as che_next_licheng,isnull(che_rjlc,0) as che_rjlc,isnull(che_baoyanglicheng,0) as che_baoyanglicheng " +
+                "from work_cheliang_sm where che_no='" + che_no + "'");
+        dao.execute(sql3);
+        List<Record> list3 = sql3.getList(Record.class);
+        String cheNextLicheng = list3.get(0).getString("che_next_licheng");
+        String cheRjlc = list3.get(0).getString("che_rjlc");
+        String cheBaoyanglicheng = list3.get(0).getString("che_baoyanglicheng");
+        map.put("che_next_licheng", cheNextLicheng);
+        map.put("che_rjlc", cheRjlc);
+        map.put("che_baoyanglicheng", cheBaoyanglicheng);
         if (map.size() > 0) {
             String json = Json.toJson(map);
             return jsons.json(1, 1, 1, json);
         }
         return jsons.json(1, 1, 0, "");
-
     }
 }
 		

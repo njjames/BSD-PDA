@@ -257,27 +257,24 @@ public class publicModule {
      * @param che_cx
      * @param che_vin
      */
-    public Work_cheliang_smEntity saveCheInfo(String che_no, Date che_gcrq, String che_cx,
-                                              String che_vin, String gongsino) {
-        List<Work_cheliang_smEntity> list_che = dao.query(
-                Work_cheliang_smEntity.class, Cnd.where("che_no", "=", che_no));
-        if (list_che.size() > 0) {
-            Work_cheliang_smEntity che = list_che.get(0);
-            che.setChe_cx(che_cx);
-            che.setGongSiNo(gongsino);
-            che.setChe_vin(che_vin);
-            che.setChe_gcrq(che_gcrq);
-            dao.update(che);
-            return che;
+    public Work_cheliang_smEntity saveCheInfo(String che_no, Date che_gcrq, String che_cx, String che_vin, String gongsino) {
+        Work_cheliang_smEntity cheliangSmEntity = dao.fetch(Work_cheliang_smEntity.class, che_no);
+        if (cheliangSmEntity != null) {
+            cheliangSmEntity.setChe_cx(che_cx);
+            cheliangSmEntity.setGongSiNo(gongsino);
+            cheliangSmEntity.setChe_vin(che_vin);
+            cheliangSmEntity.setChe_gcrq(che_gcrq);
+            dao.update(cheliangSmEntity, "^che_cx|gongsino|che_vin|che_gcrq$");
+            return cheliangSmEntity;
         } else {
-            Work_cheliang_smEntity che = new Work_cheliang_smEntity();
-            che.setChe_cx(che_cx);
-            che.setChe_vin(che_vin);
-            che.setGongSiNo(gongsino);
-            che.setChe_gcrq(che_gcrq);
-            che.setKehu_no(che_no);
-            dao.insert(che);
-            return che;
+            cheliangSmEntity = new Work_cheliang_smEntity();
+            cheliangSmEntity.setChe_cx(che_cx);
+            cheliangSmEntity.setChe_vin(che_vin);
+            cheliangSmEntity.setGongSiNo(gongsino);
+            cheliangSmEntity.setChe_gcrq(che_gcrq);
+            cheliangSmEntity.setKehu_no(che_no);
+            dao.insert(cheliangSmEntity);
+            return cheliangSmEntity;
         }
     }
 
@@ -1687,7 +1684,7 @@ public class publicModule {
 
     /**
      * 修改车辆基本信息和客户基本信息
-     *
+     *     对于日期，如果前台什么都没有输入，映射到对象中的值是null
      * @return
      * @author LHW
      * @time修改时间 2017年9月18日08:56:16
@@ -1697,59 +1694,36 @@ public class publicModule {
     public boolean updatejb(@Param("..") Work_cheliang_smEntity chel, @Param("..") KehuEntity kehu) {
         boolean ss = false;
         if (chel != null && kehu != null) {
-            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String che_gcrq = "";
-            String che_next_byrq = "";
-            String che_jianche_dqrq = "";
-            String che_jiaoqx_dqrq = "";
-            String che_shangyex_dqrq = "";
-            if (chel.getChe_gcrq() != null) {
-                che_gcrq = format.format(chel.getChe_gcrq());
-            }
-            if (chel.getChe_next_byrq() != null) {
-                che_next_byrq = format.format(chel.getChe_next_byrq());
-            }
-            if (chel.getChe_jianche_dqrq() != null) {
-                che_jianche_dqrq = format.format(chel.getChe_jianche_dqrq());
-            }
-            if (chel.getChe_jiaoqx_dqrq() != null) {
-                che_jiaoqx_dqrq = format.format(chel.getChe_jiaoqx_dqrq());
-            }
-            if (chel.getChe_shangyex_dqrq() != null) {
-                che_shangyex_dqrq = format.format(chel.getChe_shangyex_dqrq());
-            }
-//            Sql sql2 = Sqls.queryRecord("select kehu_no from work_cheliang_sm where che_no='" + chel.getChe_no() + "'");
-//            dao.execute(sql2);
-//            List<Record> res1 = sql2.getList(Record.class);
-//            String kehu_no = res1.get(0).getString("kehu_no");
-            String kehu_no = kehu.getKehu_no();
-            Sql sql = Sqls
-                    .create("update work_cheliang_sm set che_vin='" + chel.getChe_vin() + "',che_nf='" + chel.getChe_nf() + "', che_wxys='" + chel.getChe_wxys() + "', che_cx='" + chel.getChe_cx() + "', che_gcrq='" + che_gcrq + "', che_next_byrq='" + che_next_byrq + "' ,che_jianche_dqrq='" + che_jianche_dqrq + "', che_jiaoqx_dqrq='" + che_jiaoqx_dqrq + "' ,che_shangyex_dqrq='" + che_shangyex_dqrq + "' where che_no='" + chel.getChe_no() + "'");
-            dao.execute(sql);
-            // 为什么要更改客户所属公司呢？
-//            Sql sql1 = Sqls
-//                    .create("update kehu set kehu_canusedingongsi='" + kehu.getGongSiNo() + "', gongsino='" + kehu.getGongSiNo() + "', kehu_mc='" + kehu.getKehu_mc() + "', kehu_xm='" + kehu.getKehu_xm() + "', kehu_sj='" + kehu.getKehu_sj() + "' , kehu_dh='" + kehu.getKehu_dh() + "' where kehu_no='" + kehu_no + "'");
-            // 不在修改客户所属公司了
+            Work_cheliang_smEntity _workCheliangSmEntity = dao.fetch(Work_cheliang_smEntity.class, chel.getChe_no());
+            _workCheliangSmEntity.setChe_vin(chel.getChe_vin());
+            _workCheliangSmEntity.setChe_pp(chel.getChe_pp());
+            _workCheliangSmEntity.setChe_wxys(chel.getChe_wxys());
+            _workCheliangSmEntity.setChe_cx(chel.getChe_cx());
+            _workCheliangSmEntity.setChe_nf(chel.getChe_nf());
+            _workCheliangSmEntity.setChe_gcrq(chel.getChe_gcrq());
+            _workCheliangSmEntity.setChe_next_byrq(chel.getChe_next_byrq());
+            _workCheliangSmEntity.setChe_jianche_dqrq(chel.getChe_jianche_dqrq());
+            _workCheliangSmEntity.setChe_jiaoqx_dqrq(chel.getChe_jiaoqx_dqrq());
+            _workCheliangSmEntity.setChe_shangyex_dqrq(chel.getChe_shangyex_dqrq());
+            dao.update(_workCheliangSmEntity, "^che_vin|che_pp|che_wxys|che_cx|che_nf|che_gcrq|che_next_byrq|che_jianche_dqrq|che_jiaoqx_dqrq|che_shangyex_dqrq$");
+//            dao.updateIgnoreNull(chel); // 这个方法是按照id更新，所以不用这个方法了
             Sql sql1 = Sqls
-                    .create("update kehu set kehu_mc='" + kehu.getKehu_mc() + "', kehu_xm='" + kehu.getKehu_xm() + "', kehu_sj='" + kehu.getKehu_sj() + "' , kehu_dh='" + kehu.getKehu_dh() + "' where kehu_no='" + kehu_no + "'");
+                    .create("update kehu set kehu_mc='" + kehu.getKehu_mc() + "',kehu_xm='" + kehu.getKehu_xm() + "',kehu_sj='" + kehu.getKehu_sj() + "',kehu_dh='" + kehu.getKehu_dh() +
+                            "' where kehu_no='" + kehu.getKehu_no() + "'");
             dao.execute(sql1);
 
             // 单据中的公司都不改了
-            Sql sql3 = Sqls
-                    .create("update work_pz_gz set kehu_mc='" + kehu.getKehu_mc() + "', kehu_xm='" + kehu.getKehu_xm() + "'  ,kehu_dh='" + kehu.getKehu_dh() + "',che_vin='" + chel.getChe_vin() + "', che_wxys='" + chel.getChe_wxys() + "', che_cx='" + chel.getChe_cx() + "' where che_no='" + chel.getChe_no() + "'");
-            dao.execute(sql3);
-            Sql sql4 = Sqls
-                    .create("update work_yuyue_pz set kehu_mc='" + kehu.getKehu_mc() + "', kehu_xm='" + kehu.getKehu_xm() + "', kehu_dh='" + kehu.getKehu_dh() + "' where kehu_no='" + kehu_no + "'");
-            dao.execute(sql4);
-            Sql sql5 = Sqls
-                    .create("update work_baojia_pz set kehu_mc='" + kehu.getKehu_mc() + "', kehu_xm='" + kehu.getKehu_xm() + "',kehu_dh='" + kehu.getKehu_dh() + "' where kehu_no='" + kehu_no + "'");
-            dao.execute(sql5);
-            Sql sql7 = Sqls
-                    .create("update work_yuyue_pz set che_vin='" + chel.getChe_vin() + "', che_wxys='" + chel.getChe_wxys() + "', che_cx='" + chel.getChe_cx() + "' where che_no='" + chel.getChe_no() + "'");
-            dao.execute(sql7);
-            Sql sql8 = Sqls
-                    .create("update work_baojia_pz set che_vin='" + chel.getChe_vin() + "', che_wxys='" + chel.getChe_wxys() + "', che_cx='" + chel.getChe_cx() + "' where che_no='" + chel.getChe_no() + "'");
-            dao.execute(sql8);
+            dao.execute(Sqls.create("update work_pz_gz set kehu_mc='" + kehu.getKehu_mc() + "',kehu_xm='" + kehu.getKehu_xm() + "',kehu_dh='" + kehu.getKehu_dh() +
+                    "',che_vin='" + chel.getChe_vin() + "',che_wxys='" + chel.getChe_wxys() + "',che_cx='" + chel.getChe_cx() +
+                    "' where che_no='" + chel.getChe_no() + "'"));
+            dao.execute(Sqls.create("update work_yuyue_pz set kehu_mc='" + kehu.getKehu_mc() + "',kehu_xm='" + kehu.getKehu_xm() + "',kehu_dh='" + kehu.getKehu_dh() +
+                    "' where kehu_no='" + kehu.getKehu_no() + "'"));
+            dao.execute(Sqls.create("update work_yuyue_pz set che_vin='" + chel.getChe_vin() + "',che_wxys='" + chel.getChe_wxys() + "',che_cx='" + chel.getChe_cx() +
+                    "' where che_no='" + chel.getChe_no() + "'"));
+            dao.execute(Sqls.create("update work_baojia_pz set kehu_mc='" + kehu.getKehu_mc() + "',kehu_xm='" + kehu.getKehu_xm() + "',kehu_dh='" + kehu.getKehu_dh() +
+                    "' where kehu_no='" + kehu.getKehu_no() + "'"));
+            dao.execute(Sqls.create("update work_baojia_pz set che_vin='" + chel.getChe_vin() + "',che_wxys='" + chel.getChe_wxys() + "',che_cx='" + chel.getChe_cx() +
+                    "' where che_no='" + chel.getChe_no() + "'"));
             //河北保定万通专用
 			/*Sql sql11 = Sqls
 					.queryRecord("update kehu set kehu_CanUsedInGongSi='01' where kehu_CanUsedInGongSi=''");
@@ -1773,7 +1747,7 @@ public class publicModule {
     @At("/getvin")
     @Ok("raw:json")
     public String getvin(String vinCode) throws Exception {
-        if (vinCode != null && vinCode != "") {
+        if (vinCode != null && !"".equals(vinCode)) {
             Sql sql1 = Sqls
                     .queryRecord("select sys_shuju_url,sys_shuju_user,sys_shuju_pwd from sm_system_info ");
             dao.execute(sql1);

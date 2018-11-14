@@ -56,14 +56,11 @@ public class BsdUtils {
             xche_clf = Double.parseDouble(resClf.get(0).getString("xche_clf"));
         }
         Sql sql1_2 = Sqls
-                .create("update work_pz_gz set xche_clf = " + xche_clf + ",xche_clbh = " + xche_clf + ",xche_clsl=0,xche_clse=0 where work_no='" + work_no + "'");
+                .create("update work_pz_gz set xche_clf = " + xche_clf + ",xche_clbh = " + xche_clf + ",xche_clsl=0,xche_clse=0" +
+                        ",xche_yhje = isnull(xche_wxxm_yhje,0)+isnull(xche_peij_yhje,0)" +
+                        ",xche_hjje= isnull(xche_rgf,0)+isnull(xche_clf,0)" +
+                        " where work_no='" + work_no + "'");
         dao.execute(sql1_2);
-        Sql sql1_3 = Sqls
-                .create("update work_pz_gz set xche_yhje = isnull(xche_wxxm_yhje,0)+isnull(xche_peij_yhje,0) where work_no = '" + work_no + "'");
-        dao.execute(sql1_3);
-        Sql sql1_4 = Sqls
-                .create("update work_pz_gz set xche_hjje= isnull(xche_rgf,0) + isnull(xche_clf,0) where work_no = '" + work_no + "'");
-        dao.execute(sql1_4);
     }
 
     /**
