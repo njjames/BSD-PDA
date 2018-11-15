@@ -54,6 +54,7 @@ import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.json.Json;
 import org.nutz.json.JsonFormat;
 import org.nutz.mvc.annotation.At;
+import org.nutz.mvc.annotation.Fail;
 import org.nutz.mvc.annotation.Ok;
 import org.nutz.mvc.annotation.Param;
 
@@ -105,7 +106,7 @@ public class KuaixiuModule {
 
         dao.update(Work_ll_gzEntity.class, Chain.make("cangk_dm", pz.getCangk_dm()), Cnd.where("Work_no", "=", pz.getWork_no()));
         Sql sql0_8 = Sqls
-                .create("update work_ll_gz set danwei_bs_ls =  1 where  work_no = '" + pz.getWork_no() + "' and  danwei_bs_ls = 0 ");
+                .create("update work_ll_gz set danwei_bs_ls =  1 where work_no = '" + pz.getWork_no() + "' and  danwei_bs_ls = 0 ");
         dao.execute(sql0_8);
         Sql sql0_1 = Sqls.queryRecord("select Card_JifenType from cardsysset");
         dao.execute(sql0_1);
@@ -555,62 +556,66 @@ public class KuaixiuModule {
         dao.execute(sql1);
         // 更新付款单位
         updateFkdw(work_no);
-        Trans.exec(new Atom() {
-            @Override
-            public void run() {
-                // 更新下次保养信息
-                updateNextTx(work_no, che_no, sys_baoyang_che_fs, isNextTx, next_bylc, next_byrq);
-                // 插入work_pz_sj
-                insertWorkPzSj(work_no);
-                // 插入work_pz_sj_ls
-                insertWorkPzSjLs(work_no);
-                // 插入work_mx_sj
-                insertWorkMxSj(work_no);
-                // 插入work_mx_sj_ls
-                insertWorkMxSjLs(work_no);
-                // 插入work_wjg_sj
-                insertWorkWjgSj(work_no);
-                // 插入check_mx_sj
-                insertCheckMxSj(work_no);
-                // 插入work_ll_sj
-                insertWorkLlSj(work_no);
-                // 插入work_ll_sj_ls
-                insertWorkLlSjLs(work_no);
-                // 插入Work_Pg_Sj
-                insertWorkPgSj(work_no);
-                // 执行Wx_lingliao_chuku的存储过程
-                if (callReturnValueProc("Wx_lingliao_chuku('" + work_no + "')") != 0) {
-                    throw new RuntimeException("结算失败，存储过程--出库出错！");
-                }
-                // 执行wx_weixiu_kuan的存储过程
-                if (callReturnValueProc("wx_weixiu_kuan('" + work_no + "')") != 0) {
-                    throw new RuntimeException("结算失败，存储过程--收款出错！");
-                }
-                // 执行wx_weixiu_piao的存储过程
-                if (callReturnValueProc("wx_weixiu_piao('" + work_no + "')") != 0) {
-                    throw new RuntimeException("结算失败，存储过程--开票出错！");
-                }
-                dao.execute(Sqls.create("update work_yuyue_pz set yuyue_progress='已离店' where work_no='" + work_no + "'"));
-                // 处理日记账
-                updateRiJizhang(work_no, iscard, xche_ssje, zhifu_card_xj);
-                // 处理会员卡积分，如果是储值卡结算，则积分到储值卡
-                if (iscard == 1) {
-                    updateCardJifen(work_no, card_no, xche_ssje, caozuoyuan_xm);
-                }
-                // 减去会员卡（单据中的会员卡）中的特殊项目
-                Sql sql8 = Sqls.queryRecord("select card_no from work_pz_sj where work_no='" + work_no + "'");
-                dao.execute(sql8);
-                List<Record> res1 = sql8.getList(Record.class);
-                String cardNo = res1.get(0).getString("card_no");
-                if (cardNo != null && !"".equals(card_no)) {
-                    updateCardSpecialCS(work_no, cardNo);
-                    if (iscard == 0) {
-                        updateCardJifen(work_no, cardNo, xche_ssje, caozuoyuan_xm);
+        try {
+            Trans.exec(new Atom() {
+                @Override
+                public void run() {
+                    // 更新下次保养信息
+                    updateNextTx(work_no, che_no, sys_baoyang_che_fs, isNextTx, next_bylc, next_byrq);
+                    // 插入work_pz_sj
+                    insertWorkPzSj(work_no);
+                    // 插入work_pz_sj_ls
+                    insertWorkPzSjLs(work_no);
+                    // 插入work_mx_sj
+                    insertWorkMxSj(work_no);
+                    // 插入work_mx_sj_ls
+                    insertWorkMxSjLs(work_no);
+                    // 插入work_wjg_sj
+                    insertWorkWjgSj(work_no);
+                    // 插入check_mx_sj
+                    insertCheckMxSj(work_no);
+                    // 插入work_ll_sj
+                    insertWorkLlSj(work_no);
+                    // 插入work_ll_sj_ls
+                    insertWorkLlSjLs(work_no);
+                    // 插入Work_Pg_Sj
+                    insertWorkPgSj(work_no);
+                    // 执行Wx_lingliao_chuku的存储过程
+                    if (callReturnValueProc("Wx_lingliao_chuku('" + work_no + "')") != 0) {
+                        throw new RuntimeException("结算失败，存储过程--出库出错！");
+                    }
+                    // 执行wx_weixiu_kuan的存储过程
+                    if (callReturnValueProc("wx_weixiu_kuan('" + work_no + "')") != 0) {
+                        throw new RuntimeException("结算失败，存储过程--收款出错！");
+                    }
+                    // 执行wx_weixiu_piao的存储过程
+                    if (callReturnValueProc("wx_weixiu_piao('" + work_no + "')") != 0) {
+                        throw new RuntimeException("结算失败，存储过程--开票出错！");
+                    }
+                    dao.execute(Sqls.create("update work_yuyue_pz set yuyue_progress='已离店' where work_no='" + work_no + "'"));
+                    // 处理日记账
+                    updateRiJizhang(work_no, iscard, xche_ssje, zhifu_card_xj);
+                    // 处理会员卡积分，如果是储值卡结算，则积分到储值卡
+                    if (iscard == 1) {
+                        updateCardJifen(work_no, card_no, xche_ssje, caozuoyuan_xm);
+                    }
+                    // 减去会员卡（单据中的会员卡）中的特殊项目
+                    Sql sql8 = Sqls.queryRecord("select card_no from work_pz_sj where work_no='" + work_no + "'");
+                    dao.execute(sql8);
+                    List<Record> res1 = sql8.getList(Record.class);
+                    String cardNo = res1.get(0).getString("card_no");
+                    if (cardNo != null && !"".equals(card_no)) {
+                        updateCardSpecialCS(work_no, cardNo);
+                        if (iscard == 0) {
+                            updateCardJifen(work_no, cardNo, xche_ssje, caozuoyuan_xm);
+                        }
                     }
                 }
-            }
-        });
-        return "success";
+            });
+        } catch (Exception e) {
+            return jsons.json(1, 1, 0, e.getMessage());
+        }
+        return jsons.json(1, 1, 1, "结算成功");
     }
 
     private void updateFkdw(String work_no) {

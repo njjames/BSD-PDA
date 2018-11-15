@@ -5,6 +5,7 @@ import java.sql.CallableStatement;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -270,7 +271,6 @@ public class ordersModule {
     /**
      * 材料
      *
-     * @param pai
      * @return
      */
     @At
@@ -328,161 +328,98 @@ public class ordersModule {
     @At
     @Ok("raw:json")
     public String add(final String gongsiNo, final String caozuoyuan_xm) {
-        if (gongsiNo == "" || caozuoyuan_xm == "") {
-            return jsons.json(1, 0, 0, "");
+        if (gongsiNo == null || "".equals(gongsiNo) || caozuoyuan_xm == null || "".equals(caozuoyuan_xm)) {
+            throw new RuntimeException("公司编码或者操作员不能为空！");
         }
         // 新增单号
         dao.run(new ConnCallback() {
             @Override
             public void invoke(java.sql.Connection conn) throws Exception {
-                CallableStatement cs = conn
-                        .prepareCall("{call sp_bslistnew (2007,?,?,?)}");
+                CallableStatement cs = conn.prepareCall("{call sp_bslistnew (2007,?,?,?)}");
                 cs.setString(1, gongsiNo);
                 cs.setString(2, caozuoyuan_xm);
                 cs.registerOutParameter(3, Types.VARCHAR);
                 cs.executeUpdate();
-                String orderNo = cs.getString(3);
-                number = orderNo;
+                number = cs.getString(3);
             }
         });
-        System.out.println("===============" + number + "=================");
-        if (number == "") {
-            return jsons.json(1, 0, 0, "");
+        if (number == null || "".equals(number)) {
+            throw new RuntimeException("新建维修单号失败！");
         }
         // 查询建表需要的内容
-        List<feilvEntity> fe;
-        List<feilvEntity> fei1 = dao.query(feilvEntity.class,
-                Cnd.where("feil_mc", "=", "一级标准"));
-        List<feilvEntity> fei = dao.query(feilvEntity.class,
-                Cnd.where("feil_sy", "=", "1"));
-        if (fei.size() != 0) {
-            fe = dao.query(feilvEntity.class, Cnd.where("feil_sy", "=", "1"));
-        } else if (fei1.size() != 0) {
-            fe = dao.query(feilvEntity.class, Cnd.where("feil_mc", "=", "一级标准"));
+        String feilvName = "";
+        double feilv = 1;
+        List<feilvEntity> feilvList = dao.query(feilvEntity.class, Cnd.where("feil_sy", "=", "1"));
+        if (feilvList.size() > 0) {
+            feilvName = feilvList.get(0).getFeil_mc();
+            feilv = feilvList.get(0).getFeil_fl();
         } else {
-            fe = dao.query(feilvEntity.class,
-                    Cnd.where("feil_mc", "=", "一级标准"), new offsetPager(1, 1));
+            List<feilvEntity> feiList1 = dao.query(feilvEntity.class, Cnd.where("feil_mc", "=", "一级标准"));
+            if (feiList1.size() > 0) {
+                feilvName = feiList1.get(0).getFeil_mc();
+                feilv = feiList1.get(0).getFeil_fl();
+            } else {
+                Sql sql = Sqls.queryRecord("select top 1 feil_mc, feil_fl from work_feilv_sm");
+                dao.execute(sql);
+                List<Record> list = sql.getList(Record.class);
+                if (list.size() > 0) {
+                    feilvName = list.get(0).getString("feil_mc");
+                    feilv = Double.parseDouble(list.get(0).getString("feil_fl"));
+                }
+            }
         }
-        String mc = fe.get(0).getFeil_mc();
-        double fl = fe.get(0).getFeil_fl();
-
-        double dos1 = 1;
-        double dos2 = 1;
-        List list_ = sm();
-        if (list_.size() > 0) {
-            dos1 = Double.parseDouble(list_.get(0).toString());
-            dos2 = Double.parseDouble(list_.get(1).toString());
+        double wxxm_lv = 0;
+        double peij_lv = 0;
+        Sql sql = Sqls.queryRecord("select wxxm_lv,peij_lv from sm_glf");
+        dao.execute(sql);
+        List<Record> res = sql.getList(Record.class);
+        if (res.size() > 0) {
+            wxxm_lv = Double.parseDouble(res.get(0).getString("wxxm_lv"));
+            peij_lv = Double.parseDouble(res.get(0).getString("peij_lv"));
         }
-        System.out.println("====" + number);
-        Work_pz_gzEntity result = dao.fetch(Work_pz_gzEntity.class,
-                Cnd.where("work_no", "=", number));
-        // for(Work_pz_gzEntity re :result){
-        result.setXche_cz(caozuoyuan_xm);
-        result.setDept_mc(gongsiNo);
-        result.setXche_jdrq(new Date());
-        result.setXche_sfbz(mc);
-        result.setXche_sffl(fl);
-        result.setXche_yjwgrq(time());
-        result.setXche_wxjd("登记");
-        result.setFlag_fast(true);
-        result.setXche_ywlx("正常维修");
-        result.setXche_wxxmlv(dos1 * 100);
-        result.setXche_peijlv(dos2 * 100);
-        result.setFlag_pad(true);
-        result.setFlag_IsCheck(zhijian());
-        result.setFlag_isxiche(xiche());
-        System.out.println("==========" + result.getWork_no());
-        int num = dao.update(result);
-
+        Work_pz_gzEntity pz = dao.fetch(Work_pz_gzEntity.class, Cnd.where("work_no", "=", number));
+        // 获取3天之后的日期
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DATE, 3);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        pz.setXche_yjwgrq(simpleDateFormat.format(calendar.getTime()));
+        pz.setXche_jsrq(Calendar.getInstance().getTime());
+        pz.setXche_sfbz(feilvName);
+        pz.setXche_sffl(feilv);
+        pz.setXche_wxjd("登记");
+        pz.setFlag_fast(true);
+        pz.setXche_ywlx("正常维修");
+        pz.setXche_wxxmlv(wxxm_lv * 100);
+        pz.setXche_peijlv(peij_lv * 100);
+        pz.setCard_itemrate(1);
+        pz.setCard_peijrate(1);
+        pz.setFlag_pad(true);
+        // 判断是否质检和洗车
+        Sql sql1 = Sqls.queryRecord("select sys_ischeckwork,sys_isxiche from sm_system_info");
+        dao.execute(sql1);
+        List<Record> list = sql1.getList(Record.class);
+        if (list.size() > 0) {
+            if (list.get(0).getInt("sys_ischeckwork") == 0) {
+                pz.setFlag_IsCheck(false);
+            } else {
+                pz.setFlag_IsCheck(true);
+            }
+            if (list.get(0).getInt("sys_isxiche") == 0) {
+                pz.setFlag_isxiche(false);
+            } else {
+                pz.setFlag_isxiche(true);
+            }
+        } else {
+            pz.setFlag_IsCheck(false);
+            pz.setFlag_isxiche(false);
+        }
+        int num = dao.update(pz, "^xche_yjwgrq|xche_jsrq|xche_sfbz|xche_sffl|xche_wxjd|flag_fast|xche_ywlx|xche_wxxmlv|xche_peijlv|card_itemrate|card_peijrate|flag_pad|flag_IsCheck|flag_isxiche$");
         if (num < 1) {
-            return jsons.json(1, 0, 0, "");
+            throw new RuntimeException("单据已经不存在！");
         }
-
-        List<Work_pz_gzEntity> result1 = dao.query(Work_pz_gzEntity.class,
-                Cnd.where("work_no", "=", number));
-        // String json = Json.toJson(result1, JsonFormat.full());
-        // return jsons.json(1, result1.size(), 0, json);
         return number;
     }
 
-    private String time() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Sql sql = Sqls.queryRecord("select dateadd(hour,3,'"
-                + sdf.format(new Date()) + "')");
-        dao.execute(sql);
-        String sd = null;
-        List<Record> res = sql.getList(Record.class);
-        for (Record re : res) {
-            sd = re.getString("");
-
-        }
-
-        return sd;
-
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private List sm() {
-        Sql sql = Sqls.queryRecord("select wxxm_lv,peij_lv,* from sm_glf");
-        dao.execute(sql);
-        ArrayList list = new ArrayList();
-        List<Record> res = sql.getList(Record.class);
-        for (Record re : res) {
-            list.add(re.getString("wxxm_lv"));
-            list.add(re.getString("peij_lv"));
-        }
-
-        return list;
-
-    }
-
-    /**
-     * select sys_ischeckwork from sm_system_info --是否质检 flag_ischeck;
-     *
-     * select sys_isxiche from sm_system_info --是否洗车lag_isxiche;
-     */
-
-    /**
-     * 是否质检 flag_ischeck
-     *
-     * @return
-     */
-    private boolean zhijian() {
-        Sql sql = Sqls
-                .queryRecord("select sys_ischeckwork from sm_system_info");
-        dao.execute(sql);
-        String s = "";
-        List<Record> res = sql.getList(Record.class);
-        for (Record re : res) {
-            s = re.getString("sys_ischeckwork");
-        }
-        if (s == "0") {
-            return false;
-        }
-        return true;
-
-    }
-
-    /**
-     * 是否洗车lag_isxiche
-     *
-     * @return
-     */
-    private boolean xiche() {
-        Sql sql = Sqls.queryRecord("select sys_isxiche  from sm_system_info");
-        dao.execute(sql);
-        String s = "";
-        List<Record> res = sql.getList(Record.class);
-        for (Record re : res) {
-            s = re.getString("lag_isxiche");
-        }
-
-        if (s == "0") {
-            return false;
-        }
-        return true;
-
-    }
 
     /**
      * 添加基本信息

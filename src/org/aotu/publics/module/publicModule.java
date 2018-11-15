@@ -1465,12 +1465,9 @@ public class publicModule {
     @At
     @Ok("raw:json")
     public String chexi(String dm) {
-        Sm_peijcx_newEntity ben = dao.fetch(Sm_peijcx_newEntity.class,
-                Cnd.where("chex_mc", "=", dm));
-        List<Sm_peijcx_newEntity> result = dao.query(
-                Sm_peijcx_newEntity.class,
-                Cnd.where("che_level", "=", "2").and("chex_top", "=",
-                        ben.getChex_bz()));
+        Sm_peijcx_newEntity ben = dao.fetch(Sm_peijcx_newEntity.class, Cnd.where("chex_mc", "=", dm));
+        List<Sm_peijcx_newEntity> result = dao.query(Sm_peijcx_newEntity.class,
+                Cnd.where("che_level", "=", "2").and("chex_top", "=", ben.getChex_bz()));
         String json = Json.toJson(result, JsonFormat.full());
         if (result.size() != 0) {
             return jsons.json(1, result.size(), 1, json);
