@@ -486,7 +486,8 @@ public class KuaixiuModule {
             String json = Json.toJson(tipLists);
             return jsons.json(1, 1, 1, json);
         }
-        return jsons.json(1, 0, 1, "");
+//        return jsons.json(1, 0, 1, ""); // 特别注意，最后一个参数永远不能为空字符，否则最后拼出来的字符串就不是json格式了
+        return jsons.json(1, 0, 1, "检测成功");
     }
 
     /**
