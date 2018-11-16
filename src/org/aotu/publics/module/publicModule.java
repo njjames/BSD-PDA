@@ -213,14 +213,13 @@ public class publicModule {
      * @param kehu_mc
      * @param kehu_dh
      */
+    @At
     public void saveKeHu(String kehu_no, String kehu_mc, String kehu_dh) {
-        List<KehuEntity> list = dao.query(KehuEntity.class,
-                Cnd.where("kehu_no", "=", kehu_no));
         KehuEntity kehuEntity = dao.fetch(KehuEntity.class, kehu_no);
         if (kehuEntity != null) {
             kehuEntity.setKehu_mc(kehu_mc);
             kehuEntity.setKehu_dh(kehu_dh);
-            dao.update(kehuEntity, "^kehu_mc|kehu_dh$");
+            dao.update(kehuEntity, "^kehu_mc$|kehu_dh");
         } else {
             kehuEntity = new KehuEntity();
             kehuEntity.setKehu_no(kehu_no);

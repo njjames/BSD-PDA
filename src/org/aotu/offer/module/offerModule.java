@@ -468,25 +468,34 @@ public class offerModule {
 	 */
 	@At
 	@Ok("raw:json")
-	public String addjb(@Param("..") baoJiaEntity yuyue) {
-		baoJiaEntity bao = dao.fetch(baoJiaEntity.class, yuyue.getList_no());
-        bao.setChe_cx(yuyue.getChe_cx());
-        bao.setChe_vin(yuyue.getChe_vin());
-        bao.setList_lc(yuyue.getList_lc());
-        bao.setList_yjjclc(yuyue.getList_yjjclc());
-        bao.setKehu_mc(yuyue.getKehu_mc());
-        bao.setKehu_dh(yuyue.getKehu_dh());
-        bao.setList_sffl(yuyue.getList_sffl());
-        bao.setList_sfbz(yuyue.getList_sfbz());
-        bao.setList_hjje(yuyue.getList_hjje());
-        bao.setList_gj_wx(yuyue.getList_gj_wx());
-        bao.setList_gj_ll(yuyue.getList_gj_ll());
-        bao.setList_state(yuyue.getList_state());
-        bao.setList_progress(yuyue.getList_progress());
-		dao.update(bao,"^che_no|che_cx|che_vin|List_lc|kehu_mc|kehu_dh|List_sfbz|List_yjjclc|List_sffl|kehu_no|List_hjje|List_state|List_progress|List_gj_wx|List_gj_ll$");
-		Work_cheliang_smEntity che = pu.saveCheInfo(yuyue.getChe_no(), yuyue.getGcsj(), yuyue.getChe_cx(), yuyue.getChe_vin(),yuyue.getGongSiNo());
-		pu.saveKeHu(che.getKehu_no(), yuyue.getKehu_mc(), yuyue.getKehu_dh());
-		return "success";
+	public String addjb(@Param("..") final baoJiaEntity yuyue) {
+	    try {
+            Trans.exec(new Atom() {
+                @Override
+                public void run() {
+                    baoJiaEntity bao = dao.fetch(baoJiaEntity.class, yuyue.getList_no());
+                    bao.setChe_cx(yuyue.getChe_cx());
+                    bao.setChe_vin(yuyue.getChe_vin());
+                    bao.setList_lc(yuyue.getList_lc());
+                    bao.setList_yjjclc(yuyue.getList_yjjclc());
+                    bao.setKehu_mc(yuyue.getKehu_mc());
+                    bao.setKehu_dh(yuyue.getKehu_dh());
+                    bao.setList_sffl(yuyue.getList_sffl());
+                    bao.setList_sfbz(yuyue.getList_sfbz());
+                    bao.setList_hjje(yuyue.getList_hjje());
+                    bao.setList_gj_wx(yuyue.getList_gj_wx());
+                    bao.setList_gj_ll(yuyue.getList_gj_ll());
+                    bao.setList_state(yuyue.getList_state());
+                    bao.setList_progress(yuyue.getList_progress());
+                    dao.update(bao,"^che_no|che_cx|che_vin|List_lc|kehu_mc|kehu_dh|List_sfbz|List_yjjclc|List_sffl|kehu_no|List_hjje|List_state|List_progress|List_gj_wx|List_gj_ll$");
+                    pu.saveCheInfo(yuyue.getChe_no(), yuyue.getGcsj(), yuyue.getChe_cx(), yuyue.getChe_vin(),yuyue.getGongSiNo());
+                    pu.saveKeHu(yuyue.getKehu_no(), yuyue.getKehu_mc(), yuyue.getKehu_dh());
+                }
+            });
+        } catch (Exception e) {
+            return jsons.json(1, 1, 0, "保存单据失败！");
+        }
+		return jsons.json(1, 1, 1, "保存成功");
 	}
 
 	/**

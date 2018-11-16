@@ -413,6 +413,7 @@ public class ordersModule {
             pz.setFlag_IsCheck(false);
             pz.setFlag_isxiche(false);
         }
+        // 只要更新的对象是从库里面查出来的，更新的时候正则表达式就可以^xxx|yyy$ 这样写
         int num = dao.update(pz, "^xche_yjwgrq|xche_jsrq|xche_sfbz|xche_sffl|xche_wxjd|flag_fast|xche_ywlx|xche_wxxmlv|xche_peijlv|card_itemrate|card_peijrate|flag_pad|flag_IsCheck|flag_isxiche$");
         if (num < 1) {
             throw new RuntimeException("单据已经不存在！");

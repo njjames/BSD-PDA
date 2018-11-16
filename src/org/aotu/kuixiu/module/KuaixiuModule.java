@@ -6,7 +6,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
-import java.sql.Connection;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -32,14 +31,10 @@ import org.aotu.publics.module.publicModule;
 import org.aotu.user.entity.userEntity;
 import org.aotu.util.BsdUtils;
 import org.apache.http.HttpEntity;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.nutz.dao.Chain;
@@ -54,7 +49,6 @@ import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.json.Json;
 import org.nutz.json.JsonFormat;
 import org.nutz.mvc.annotation.At;
-import org.nutz.mvc.annotation.Fail;
 import org.nutz.mvc.annotation.Ok;
 import org.nutz.mvc.annotation.Param;
 
@@ -81,64 +75,65 @@ public class KuaixiuModule {
     publicModule pu;
 
     /**
-     * 美容快修的添加基本信息
-     *
-     * @param gongsiNo
+     * 美容快修的保存单据
      * @return
      */
     @At
     @Ok("raw:json")
-    public String addMrkxJbxx(@Param("gongsiNo") String gongsiNo,
-                              @Param("caozuoyuan_xm") final String caozuoyuan_xm,
-                              @Param("..") Work_pz_gzEntity pz) {
-        if (pz.getGongSiNo() == null || "".equals(pz.getGongSiNo())) {
-            Sql sql = Sqls
-                    .queryRecord(" select gongsino from sm_caozuoyuan where caozuoyuan_xm='" + caozuoyuan_xm + "'");
-            dao.execute(sql);
-            List<Record> res = sql.getList(Record.class);
-            pz.setGongSiNo(res.get(0).getString("gongsino"));
-        }
-        pz.setXche_jsrq(new Date());
-        dao.update(pz, "^che_no|che_cx|che_vin|kehu_no|kehu_mc|kehu_dh|xche_sfbz|xche_bz|xche_jsr|xche_lc|xche_jsrq|card_no|GongSiNo|cangk_dm$");
-        Work_cheliang_smEntity che = pu.saveCheInfo(pz.getChe_no(), pz.getGcsj(), pz.getChe_cx(),
-                pz.getChe_vin(), pz.getGongSiNo());
-        pu.saveKeHu(che.getKehu_no(), pz.getKehu_mc(), pz.getKehu_dh());
+    public String addMrkxJbxx(@Param("..") final Work_pz_gzEntity pz, @Param("isback") final int isback) {
+        try {
+            Trans.exec(new Atom() { // 还是使用事务吧，可以保持数据的一致
+                @Override
+                public void run() {
+                    Work_pz_gzEntity pzGzEntity = dao.fetch(Work_pz_gzEntity.class, pz.getWork_no());
+                    pzGzEntity.setChe_vin(pz.getChe_vin());
+                    pzGzEntity.setChe_cx(pz.getChe_cx());
+                    pzGzEntity.setKehu_mc(pz.getKehu_mc());
+                    pzGzEntity.setKehu_dh(pz.getKehu_dh());
+                    pzGzEntity.setXche_sfbz(pz.getXche_sfbz());
+                    pzGzEntity.setXche_sffl(pz.getXche_sffl());
+                    pzGzEntity.setXche_bz(pz.getXche_bz());
+                    pzGzEntity.setXche_jsr(pz.getXche_jsr());
+                    pzGzEntity.setXche_lc(pz.getXche_lc());
+                    pzGzEntity.setCangk_dm(pz.getCangk_dm());
+                    pzGzEntity.setXche_jsrq(new Date());
+                    if (isback == 1) { // 如果是返回，则把单据的占用去掉
+                        pzGzEntity.setUsing_Czy("");
+                    }
+                    dao.update(pzGzEntity, "^che_cx|che_vin|kehu_mc|kehu_dh|xche_sfbz|xche_sffl|xche_bz|xche_jsr|xche_lc|xche_jsrq|cangk_dm|Using_Czy$");
+                    pu.saveCheInfo(pz.getChe_no(), pz.getGcsj(), pz.getChe_cx(), pz.getChe_vin(), pz.getGongSiNo());
+                    pu.saveKeHu(pz.getKehu_no(), pz.getKehu_mc(), pz.getKehu_dh());
+                    dao.update(Work_ll_gzEntity.class, Chain.make("cangk_dm", pz.getCangk_dm()), Cnd.where("Work_no", "=", pz.getWork_no()));
+                    dao.execute(Sqls.create("update work_ll_gz set danwei_bs_ls=1 where work_no='" + pz.getWork_no() + "' and danwei_bs_ls=0"));
+                    Sql sql = Sqls.queryRecord("select Card_JifenType from cardsysset");
+                    dao.execute(sql);
+                    List<Record> res = sql.getList(Record.class);
+                    String Card_JifenType = res.get(0).getString("Card_JifenType");
+                    if ("false".equals(Card_JifenType)) {
+                        dao.execute(Sqls.create("update b set b.peij_jifenlv=isnull(a.peij_shlv,0) from kucshp_info a,work_ll_gz b where work_no='" + pz.getWork_no() + "' and a.peij_no=b.peij_no"));
+                        dao.execute(Sqls.create("update work_ll_gz set peij_jifen=isnull(peij_jifenlv,0)*isnull(peij_je,0) where work_no='" + pz.getWork_no() + "'"));
+                        BigDecimal pjJF = (BigDecimal) dao.func2(Work_ll_gzEntity.class, "sum", "peij_jifen",
+                                Cnd.where("work_no", "=", pz.getWork_no()).and("peij_zt", "=", "正常"));
 
-        dao.update(Work_ll_gzEntity.class, Chain.make("cangk_dm", pz.getCangk_dm()), Cnd.where("Work_no", "=", pz.getWork_no()));
-        Sql sql0_8 = Sqls
-                .create("update work_ll_gz set danwei_bs_ls =  1 where work_no = '" + pz.getWork_no() + "' and  danwei_bs_ls = 0 ");
-        dao.execute(sql0_8);
-        Sql sql0_1 = Sqls.queryRecord("select Card_JifenType from cardsysset");
-        dao.execute(sql0_1);
-        List<Record> res = sql0_1.getList(Record.class);
-        String Card_JifenType = res.get(0).getString("Card_JifenType");
-        if ("false".equals(Card_JifenType)) {
-            Sql sql0_2 = Sqls
-                    .create("update b set b.peij_jifenlv=isnull(a.peij_shlv,0) from kucshp_info a ,work_ll_gz b where work_no='" + pz.getWork_no() + "' and a.peij_no=b.peij_no");
-            dao.execute(sql0_2);
-            Sql sql0_3 = Sqls
-                    .create("update work_ll_gz set peij_jifen=isnull(peij_jifenlv,0)*isnull(peij_je,0) where work_no='" + pz.getWork_no() + "'");
-            dao.execute(sql0_3);
-            BigDecimal pjJF = (BigDecimal) dao.func2(Work_ll_gzEntity.class, "sum", "peij_jifen",
-                    Cnd.where("work_no", "=", pz.getWork_no()).and("peij_zt", "=", "正常"));
-            Sql sql0_4 = Sqls
-                    .create("update b set b.wxxm_jifenlv=isnull(a.wxxm_jifenlv,0) from work_weixiu_sm a ,work_mx_gz b where work_no='" + pz.getWork_no() + "' and a.wxxm_no=b.wxxm_no");
-            dao.execute(sql0_4);
-            Sql sql0_5 = Sqls
-                    .create("update work_mx_gz set wxxm_jifen=isnull(wxxm_jifenlv,0)*isnull(wxxm_je,0) where work_no='" + pz.getWork_no() + "'");
-            dao.execute(sql0_5);
-            BigDecimal xmJF = (BigDecimal) dao.func2(Work_mx_gzEntity.class, "sum", "wxxm_jifen",
-                    Cnd.where("work_no", "=", pz.getWork_no()).and("wxxm_zt", "=", "正常"));
-            if (pjJF != null && xmJF != null) {
-                dao.execute(Sqls.create("update work_pz_gz set work_jifen_sum= " + pjJF.add(xmJF) + " where work_no='" + pz.getWork_no() + "'"));
-            } else if (pjJF != null) {
-                dao.execute(Sqls.create("update work_pz_gz set work_jifen_sum= " + pjJF + " where work_no='" + pz.getWork_no() + "'"));
-            } else if (xmJF != null) {
-                dao.execute(Sqls.create("update work_pz_gz set work_jifen_sum= " + xmJF + " where work_no='" + pz.getWork_no() + "'"));
-            }
+                        dao.execute(Sqls.create("update b set b.wxxm_jifenlv=isnull(a.wxxm_jifenlv,0) from work_weixiu_sm a ,work_mx_gz b where work_no='" + pz.getWork_no() + "' and a.wxxm_no=b.wxxm_no"));
+                        dao.execute(Sqls.create("update work_mx_gz set wxxm_jifen=isnull(wxxm_jifenlv,0)*isnull(wxxm_je,0) where work_no='" + pz.getWork_no() + "'"));
+                        BigDecimal xmJF = (BigDecimal) dao.func2(Work_mx_gzEntity.class, "sum", "wxxm_jifen",
+                                Cnd.where("work_no", "=", pz.getWork_no()).and("wxxm_zt", "=", "正常"));
+                        if (pjJF != null && xmJF != null) {
+                            dao.execute(Sqls.create("update work_pz_gz set work_jifen_sum= " + pjJF.add(xmJF) + " where work_no='" + pz.getWork_no() + "'"));
+                        } else if (pjJF != null) {
+                            dao.execute(Sqls.create("update work_pz_gz set work_jifen_sum= " + pjJF + " where work_no='" + pz.getWork_no() + "'"));
+                        } else if (xmJF != null) {
+                            dao.execute(Sqls.create("update work_pz_gz set work_jifen_sum= " + xmJF + " where work_no='" + pz.getWork_no() + "'"));
+                        }
+                    }
+                    BsdUtils.updateWorkPzGz(dao, pz.getWork_no());
+                }
+            });
+        } catch (Exception e) {
+            return jsons.json(1, 1, 0, "保存单据失败！");
         }
-        BsdUtils.updateWorkPzGz(dao, pz.getWork_no());
-        return "success";
+        return jsons.json(1, 1, 1, "保存成功");
     }
 
     /**
@@ -150,8 +145,8 @@ public class KuaixiuModule {
     @Ok("raw:json")
     public String mrkxJbxx(String che_no, String gongsiNo, String caozuoyuan_xm, String work_no) {
         Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, che_no);
-        Work_pz_gzEntity pz = new Work_pz_gzEntity();
-        if (!"".equals(work_no)) {
+        Work_pz_gzEntity pz;
+        if (work_no != null && !"".equals(work_no)) {
             pz = dao.fetch(Work_pz_gzEntity.class, work_no);
             pz.setGcsj(che.getChe_gcrq());
         } else {
@@ -173,40 +168,50 @@ public class KuaixiuModule {
                             .desc("xche_jdrq"));
             // 如果没有，则新建单号
             if (result.size() == 0) {
-                String num = add(gongsiNo, caozuoyuan_xm);
-                pz.setWork_no(num);
-                pz.setChe_no(che_no);
-                pz.setXche_jdrq(new Date());
-                // 查询建表需要的内容
-                List<feilvEntity> fei = dao.query(feilvEntity.class,
-                        Cnd.where("feil_sy", "=", true));
-                if (fei.size() < 0) {
-                    fei = dao.query(feilvEntity.class,
-                            Cnd.where("feil_mc", "=", "一级标准"));
+//                String num = add(gongsiNo, caozuoyuan_xm);
+                String num;
+                try {
+                    num = BsdUtils.createNewBill(dao, gongsiNo, caozuoyuan_xm, 2007);
+                } catch (Exception e) {
+                    return jsons.json(1, 1, 0, e.getMessage());
                 }
-                String mc = fei.get(0).getFeil_mc();
-                double fl = fei.get(0).getFeil_fl();
-                pz.setXche_sfbz(mc);
-                pz.setXche_sffl(fl);
-                pz.setFlag_pad(true);
-                pz.setFlag_fast(true);
+                pz = dao.fetch(Work_pz_gzEntity.class, num);
                 // 设置草稿单上车辆和客户的信息
                 if (che != null) {
-                    pz.setChe_cx(che.getChe_cx());
+                    pz.setChe_no(che_no);
                     pz.setChe_vin(che.getChe_vin());
+                    pz.setChe_fd(che.getChe_fd());
+                    pz.setChe_cx(che.getChe_cx());
+                    pz.setChe_wxys(che.getChe_wxys());
+                    pz.setChe_zjno(che.getChe_zjno());
                     pz.setGcsj(che.getChe_gcrq());
                     pz.setXche_lc(che.getChe_next_licheng());
                     KehuEntity kehu = dao.fetch(KehuEntity.class, che.getKehu_no());
                     if (kehu != null) {
-                        pz.setKehu_mc(kehu.getKehu_mc());
-                        pz.setKehu_dh(kehu.getKehu_dh());
                         pz.setKehu_no(kehu.getKehu_no());
+                        pz.setKehu_mc(kehu.getKehu_mc());
+                        pz.setKehu_xm(kehu.getKehu_xm());
+                        pz.setKehu_dz(kehu.getKehu_dz());
+                        pz.setKehu_sj(kehu.getKehu_sj());
+                        pz.setKehu_dh(kehu.getKehu_dh());
+                        if (kehu.getKehu_jb() != null && !"".equals(kehu.getKehu_jb())) {
+                            pz.setXche_jb(kehu.getKehu_jb());
+                            Sql sql = Sqls.queryRecord("select dept_mc from gongzry where reny_xm='" + kehu.getKehu_jb() + "'");
+                            dao.execute(sql);
+                            List<Record> list = sql.getList(Record.class);
+                            if (list.size() > 0) {
+                                pz.setDept_mc(list.get(0).getString("dept_mc"));
+                            }
+                        }
                     }
                 }
                 pz.setMainstate(-1);
-                dao.updateIgnoreNull(pz);
+                pz.setUsing_Czy(caozuoyuan_xm); // 新建单据，把操作员使用占上
+                dao.update(pz, "^che_no|che_vin|che_fd|che_cx|che_wxys|che_zjno|gcsj|xche_lc|kehu_no|kehu_mc|kehu_xm|kehu_dz|kehu_sj|kehu_dh|xche_jb|dept_mc|mainstate|Using_Czy$");
             } else {
                 pz = result.get(0);
+                pz.setUsing_Czy(caozuoyuan_xm);
+                dao.update(pz, "Using_Czy");
                 pz.setGcsj(che.getChe_gcrq());
             }
             // 查询仓库，准备获取名字
@@ -230,116 +235,6 @@ public class KuaixiuModule {
         return jsons.json(1, 1, 1, json);
     }
 
-    String number = "";
-
-    /**
-     * 创建work单号
-     *
-     * @param gongsiNo
-     * @param caozuoyuan_xm
-     * @return
-     */
-    @At
-    @Ok("raw:json")
-    public String add(final String gongsiNo, final String caozuoyuan_xm) {
-        if (gongsiNo == "" || caozuoyuan_xm == "") {
-            return jsons.json(1, 0, 0, "");
-        }
-        // 新增单号
-        dao.run(new ConnCallback() {
-            @Override
-            public void invoke(java.sql.Connection conn) throws Exception {
-                CallableStatement cs = conn
-                        .prepareCall("{call sp_bslistnew (2007,?,?,?)}");
-                cs.setString(1, gongsiNo);
-                cs.setString(2, caozuoyuan_xm);
-                cs.registerOutParameter(3, Types.VARCHAR);
-                cs.executeUpdate();
-                String orderNo = cs.getString(3);
-                number = orderNo;
-            }
-        });
-        if (number == "") {
-            return jsons.json(1, 0, 0, "");
-        }
-        // 查询建表需要的内容
-        List<feilvEntity> fe;
-        List<feilvEntity> fei1 = dao.query(feilvEntity.class,
-                Cnd.where("feil_mc", "=", "一级标准"));
-        List<feilvEntity> fei = dao.query(feilvEntity.class,
-                Cnd.where("feil_sy", "=", "1"));
-        if (fei.size() != 0) {
-            fe = dao.query(feilvEntity.class, Cnd.where("feil_sy", "=", "1"));
-        } else if (fei1.size() != 0) {
-            fe = dao.query(feilvEntity.class, Cnd.where("feil_mc", "=", "一级标准"));
-        } else {
-            fe = dao.query(feilvEntity.class,
-                    Cnd.where("feil_mc", "=", "一级标准"), new offsetPager(1, 1));
-        }
-        String mc = fe.get(0).getFeil_mc();
-        double fl = fe.get(0).getFeil_fl();
-
-        List list_ = sm();
-        double dos1 = 1;
-        double dos2 = 1;
-        if (list_.size() > 0) {
-            dos1 = Double.parseDouble(list_.get(0).toString());
-            dos2 = Double.parseDouble(list_.get(1).toString());
-        }
-        Work_pz_gzEntity result = dao.fetch(Work_pz_gzEntity.class,
-                Cnd.where("work_no", "=", number));
-        // for(Work_pz_gzEntity re :result){
-        result.setXche_cz(caozuoyuan_xm);
-        result.setDept_mc(gongsiNo);
-        result.setXche_jdrq(new Date());
-        result.setXche_sfbz(mc);
-        result.setXche_sffl(fl);
-        result.setXche_yjwgrq(time());
-        result.setXche_wxjd("登记");
-        result.setFlag_fast(false);
-        result.setXche_ywlx("正常维修");
-        result.setXche_wxxmlv(dos1 * 100);
-        result.setXche_peijlv(dos2 * 100);
-        result.setFlag_pad(true);
-        result.setFlag_fast(true);
-        result.setFlag_IsCheck(zhijian());
-        result.setFlag_isxiche(xiche());
-
-        List<Record> list = pu.getCangKuListByCaoZuoYuan(caozuoyuan_xm);
-        if (list.size() > 0) {
-            Record ee = list.get(0);
-            result.setCangk_dm(ee.getString("cangk_dm"));
-            result.setCangk_mc(ee.getString("cangk_mc"));
-        }
-        int num = dao.update(result);
-
-        if (num < 1) {
-            return jsons.json(1, 0, 0, "");
-
-            // }
-        }
-
-        List<Work_pz_gzEntity> result1 = dao.query(Work_pz_gzEntity.class,
-                Cnd.where("work_no", "=", number));
-        // String json = Json.toJson(result1, JsonFormat.full());
-        // return jsons.json(1, result1.size(), 0, json);
-        return number;
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private List sm() {
-        Sql sql = Sqls.queryRecord("select wxxm_lv,peij_lv,* from sm_glf");
-        dao.execute(sql);
-        ArrayList list = new ArrayList();
-        List<Record> res = sql.getList(Record.class);
-        for (Record re : res) {
-            list.add(re.getString("wxxm_lv"));
-            list.add(re.getString("peij_lv"));
-        }
-
-        return list;
-
-    }
 
     /**
      * @param xche_hjje      合计金额
@@ -789,37 +684,8 @@ public class KuaixiuModule {
         }
     }
 
-
-    @At
-    @Ok("raw:json")
-    public int execWxLingliaoChuku(String work_no) {
-//        runCall("Wx_lingliao_chuku('" + work_no + "')");
-        // 尝试1：
-//        Sql sql = Sqls.queryRecord("declare @@rerturn int exec @@rerturn=Wx_lingliao_chuku '" + work_no + "' select @@rerturn as result");
-//        dao.execute(sql);
-//        List<Record> list = sql.getList(Record.class); // 这里的list的size永远是0，失败
-//        int result = list.get(0).getInt("result");
-        // 尝试2：
-//        Sql sql = Sqls.create("{call Wx_lingliao_chuku(@work_no)}");
-//        sql.params().set("work_no", work_no);
-//        dao.execute(sql);
-//        Record outParams = sql.getOutParams(); // 这个方法获取的一直null， 失败
-//        System.out.println(outParams);
-        // 尝试3：
-//        Sql sql = Sqls.create("{call $returnValue=Wx_lingliao_chuku(@work_no)}");
-//        sql.vars().set("returnValue", "@value");  // 这种方式运行直接报错
-//        sql.params().set("work_no", work_no);
-//        dao.execute(sql);
-
-        int i = callReturnValueProc("Wx_lingliao_chuku('" + work_no + "')");
-
-//        runCall();
-        return i;
-    }
-
     /**
      * 调用存储过程，并返回存储过程的return值，此值是int类型
-     *
      * @param procSql 存储过程和其参数的sql语句
      * @return 存储过程的返回值
      */
