@@ -50,12 +50,11 @@ public class PaiGongModule {
 	@Ok("raw:json")
 	public String paiGongList(String che_no, String kehu_mc, String work_no,int pageNumber,String gongsino) {
 		Pager pager = dao.createPager(pageNumber, 20);
-		Cnd cnd = Cnd.where("mainstate", ">=", "0").and("mainstate", "<=", "1").and("flag_fast", "=", "0");
+		Cnd cnd = Cnd.where("mainstate", ">=", 0).and("mainstate", "<=", 1).and("flag_fast", "=", 0);
 		//判断公司编码不等于空进入下面判断@时间2017-9-23 10:16:16
-		if(gongsino!=null&&gongsino.length()>0){
-			cnd.and("GongSiNo", "=", ""+gongsino+"");
+		if (gongsino != null && gongsino.length() > 0) {
+			cnd.and("GongSiNo", "=", gongsino);
 		}
-		System.out.println("kehu_mc=========="+kehu_mc);
 		if (che_no != null && che_no.length() > 0) {
 			cnd.and("che_no", "like", "%" + che_no + "%");
 		}
@@ -65,18 +64,17 @@ public class PaiGongModule {
 		if (work_no != null && work_no.length() > 0) {
 			cnd.and("work_no", "like", "%" + work_no+ "%");
 		}
-		List<Work_pz_gzEntity> list = dao.query(Work_pz_gzEntity.class,
-				cnd.orderBy("xche_jdrq", "desc"),pager);
-		String json = Json.toJson(list, JsonFormat.full());
-		//没有判断
-		return jsons.json(1, list.size(), 1, json);
+        List<Work_pz_gzEntity> list = dao.query(Work_pz_gzEntity.class, cnd.orderBy("xche_jdrq", "desc"), pager);
+        if (list.size() > 0) {
+            String json = Json.toJson(list, JsonFormat.full());
+            return jsons.json(1, 1, 1, json);
+        }
+        return jsons.json(1, 1, 0, "单据不存在");
 	}
 
 	@At
 	@Ok("raw:json")
 	public String getListInfoByNo(String work_no) {
-        Cnd cnd = Cnd.where("mainstate", ">=", "0").and("mainstate", "<=", "1").and("flag_fast", "=", "0")
-            .and("work_no", "=", work_no);
 		Work_pz_gzEntity workPzGzEntity = dao.fetch(Work_pz_gzEntity.class, work_no);
 		if (workPzGzEntity != null) {
             if (workPzGzEntity.getMainstate() == 0) {

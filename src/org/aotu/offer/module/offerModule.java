@@ -253,7 +253,6 @@ public class offerModule {
                     pz_new.setChe_zjno(baoJia.getChe_zjno());
                     pz_new.setXche_gj(baoJia.getList_hjje());
                     pz_new.setKehu_yb(baoJia.getKehu_yb());
-                    pz_new.setChe_no(baoJia.getChe_no());
                     pz_new.setChe_vin(baoJia.getChe_vin());
                     pz_new.setChe_fd(baoJia.getChe_fd());
                     pz_new.setChe_cx(baoJia.getChe_cx());
@@ -270,7 +269,9 @@ public class offerModule {
                     pz_new.setMainstate(0);
                     pz_new.setSubstate("未派车辆");
                     pz_new.setXche_wxjd("在修");
-                    dao.updateIgnoreNull(pz_new);
+                    dao.update(pz_new, "^work_no|che_no|kehu_no|xche_jdrq|yuyue_no|kehu_no|kehu_mc|kehu_dz|kehu_dh|kehu_sj|che_zjno" +
+							"|xche_gj|kehu_yb|che_vin|che_fd|che_cx|xche_jcr|xche_lc|setChe_wxys|xche_gdfl|xche_wxfl|xche_sfbz" +
+                            "|xche_ywlx|flag_pad|GongSiNo|GongSiMc|mainstate|substate|xche_wxjd&");
                     // 更新领料
                     Sql sql_ = Sqls
                             .create("select list_no,a.peij_no,a.peij_mc,a.peij_dw,a.peij_jk,a.peij_th,a.peij_cx,a.peij_pp,a.peij_cd,a.peij_bz,peij_sl,peij_dj,peij_je,Peij_zt,b.peij_tcfs ,b.peij_tc from work_baojia_ll a ,kucshp_info b where a.list_no = '"
