@@ -1710,7 +1710,7 @@ public class publicModule {
 
             // 单据中的公司都不改了
             dao.execute(Sqls.create("update work_pz_gz set kehu_mc='" + kehu.getKehu_mc() + "',kehu_xm='" + kehu.getKehu_xm() + "',kehu_dh='" + kehu.getKehu_dh() +
-                    "',che_vin='" + chel.getChe_vin() + "',che_wxys='" + chel.getChe_wxys() + "',che_cx='" + chel.getChe_cx() +
+                    "',che_vin='" + chel.getChe_vin() + "',che_wxys='" + chel.getChe_wxys() + "',che_cx='" + chel.getChe_cx() + "',che_nf='" + chel.getChe_nf() +
                     "' where che_no='" + chel.getChe_no() + "'"));
             dao.execute(Sqls.create("update work_yuyue_pz set kehu_mc='" + kehu.getKehu_mc() + "',kehu_xm='" + kehu.getKehu_xm() + "',kehu_dh='" + kehu.getKehu_dh() +
                     "' where kehu_no='" + kehu.getKehu_no() + "'"));
