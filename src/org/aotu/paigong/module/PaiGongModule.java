@@ -29,6 +29,8 @@ import org.nutz.lang.Strings;
 import org.nutz.mvc.annotation.At;
 import org.nutz.mvc.annotation.Ok;
 import org.nutz.mvc.annotation.Param;
+import org.nutz.trans.Atom;
+import org.nutz.trans.Trans;
 
 @IocBean
 @At("/paigong")
@@ -98,11 +100,13 @@ public class PaiGongModule {
 	@At
 	@Ok("raw:json")
 	public String getPgxxByWxxm(String work_no, String wxxm_no) {
-		List list = dao.query(WorkPgGz.class, Cnd
-				.where("work_no", "=", work_no).and("wxxm_no", "=", wxxm_no));
-		String json = Json.toJson(list, JsonFormat.full());
-		//没有判断
-		return jsons.json(1, list.size(), 1, json);
+        List<WorkPgGz> list = dao.query(WorkPgGz.class,
+                Cnd.where("work_no", "=", work_no).and("wxxm_no", "=", wxxm_no));
+        if (list.size() > 0) {
+            String json = Json.toJson(list, JsonFormat.full());
+            return jsons.json(1, 1, 1, json);
+        }
+        return jsons.json(1, 0, 0, "没有派工");
 	}
 
 	int jg;
@@ -114,51 +118,61 @@ public class PaiGongModule {
 	@At
 	@Ok("raw:json")
 	public String wangGong(final String work_no) {
-        Sql sql1 = Sqls
-                .queryRecord("select count(*) as cnt  from work_ckpz_gz where work_no= '" + work_no + "'");
+        Sql sql1 = Sqls.queryRecord("select count(*) as cnt from work_ckpz_gz where work_no='" + work_no + "'");
         dao.execute(sql1);
         List<Record> res1 = sql1.getList(Record.class);
         int cnt = res1.get(0).getInt("cnt");
-        if (cnt > 0)
+        if (cnt > 0) {
             return jsons.json(1, 1, 0, "不能完工，有未出库的用料");
+        }
         Sql sql2 = Sqls
-                .queryRecord("select count(*) as cnt  from work_ll_gz where isnull(flag_chuku,0)=0 and isnull(flag_xz,0)=0 and work_no= '"
-                        + work_no + "'");
+                .queryRecord("select count(*) as cnt from work_ll_gz where isnull(flag_chuku,0)=0 and isnull(flag_xz,0)=0 and work_no='" + work_no + "'");
         dao.execute(sql2);
         List<Record> res2 = sql2.getList(Record.class);
         cnt = res2.get(0).getInt("cnt");
-        if (cnt > 0)
+        if (cnt > 0) {
             return jsons.json(1, 1, 0, "不能完工，有未领料配件");
-        dao.run(new ConnCallback() {
-            @Override
-            public void invoke(java.sql.Connection conn) throws Exception {
-                Sql sql3 = Sqls
-                        .queryRecord("select card_no from work_pz_gz where work_no = '" + work_no + "'");
-                dao.execute(sql3);
-                List<Record> res3 = sql3.getList(Record.class);
-                String itemrate = "1";
-                String peijrate = "1";
-                if (res3 != null && !res3.equals("") && res3.size() > 0) {
-                    String card_no = res3.get(0).getString("card_no");
-                    Sql sql4 = Sqls
-                            .queryRecord("select itemrate,peijrate from cardkind  where cardkind = (select card_kind  from kehu_card where card_no = '"
-                                    + card_no + "' ) ");
-                    dao.execute(sql4);
-                    List<Record> res4 = sql4.getList(Record.class);
-                    if (res4.size() > 0) {
-                        itemrate = res4.get(0).getString("itemrate");
-                        peijrate = res4.get(0).getString("peijrate");
-                    }
+        }
+        Sql sql3 = Sqls
+                .queryRecord("select isnull(card_no,'') card_no from work_pz_gz where work_no='" + work_no + "'");
+        dao.execute(sql3);
+        List<Record> res3 = sql3.getList(Record.class);
+        final String itemrate;
+        final String peijrate;
+        if (res3.size() > 0) {
+            String card_no = res3.get(0).getString("card_no");
+            if (!card_no.equals("")) {
+                Sql sql4 = Sqls.queryRecord("select itemrate,peijrate from cardkind " +
+                        "where cardkind=(select card_kind from kehu_card where card_no='" + card_no + "' ) ");
+                dao.execute(sql4);
+                List<Record> res4 = sql4.getList(Record.class);
+                if (res4.size() > 0) {
+                    itemrate = res4.get(0).getString("itemrate");
+                    peijrate = res4.get(0).getString("peijrate");
+                } else {
+                    itemrate = "1";
+                    peijrate = "1";
                 }
-                CallableStatement cs = conn
-                        .prepareCall("{call Wx_PaiGong (?,?,?)}");
-                cs.setString(1, work_no);
-                cs.setString(2, itemrate);
-                cs.setString(3, peijrate);
-                cs.execute();
+            } else {
+                itemrate = "1";
+                peijrate = "1";
             }
-        });
-        return jsons.json(1, 1, 1, "成功");
+        } else {
+            itemrate = "1";
+            peijrate = "1";
+        }
+        // 存储过程Wx_PaiGong没有加事务，而且pc端程序永远是执行成功，这里就先这个写吧
+		dao.run(new ConnCallback() {
+			@Override
+			public void invoke(java.sql.Connection conn) throws Exception {
+				CallableStatement cs = conn.prepareCall("{call Wx_PaiGong (?,?,?)}");
+				cs.setString(1, work_no);
+				cs.setString(2, itemrate);
+				cs.setString(3, peijrate);
+				cs.execute();
+			}
+		});
+        return jsons.json(1, 1, 1, "完工成功");
 	}
 
 	/**
@@ -168,35 +182,31 @@ public class PaiGongModule {
 	@At
 	@Ok("raw:json")
 	public String stop(final String work_no) {
-		//没有判断work_no
 		Sql sql1 = Sqls
-				.queryRecord("select count(*) as cnt  from work_ckmx_sj mx,work_ckpz_sj pz where mx.ling_no=pz.ling_no and pz.work_no= '"
-						+ work_no + "'");
+				.queryRecord("select count(*) as cnt from work_ckmx_sj mx,work_ckpz_sj pz " +
+                        "where mx.ling_no=pz.ling_no and pz.work_no='" + work_no + "'");
 		dao.execute(sql1);
 		List<Record> res1 = sql1.getList(Record.class);
 		int cnt = res1.get(0).getInt("cnt");
-		if (cnt > 0)
-			return jsons.json(1, 1, 0, "不能终止，已经领料不能作废,请走空单子。");
-
+		if (cnt > 0) {
+            return jsons.json(1, 1, 0, "已经领料不能作废,请走空单子！");
+        }
 		Sql sql2 = Sqls
-				.queryRecord("select count(*) as cnt  from work_ckpz_gz where work_no= '"
-						+ work_no + "'");
+				.queryRecord("select count(*) as cnt from work_ckpz_gz where work_no='" + work_no + "'");
 		dao.execute(sql2);
 		List<Record> res2 = sql2.getList(Record.class);
 		cnt = res2.get(0).getInt("cnt");
-		if (cnt > 0)
-			return jsons.json(1, 1, 0, "不能终止，有领料单尚未出库,请先作废领料单。");
-
+		if (cnt > 0) {
+            return jsons.json(1, 1, 0, "有领料单尚未出库,请先作废领料单！");
+        }
 		dao.run(new ConnCallback() {
 			@Override
 			public void invoke(java.sql.Connection conn) throws Exception {
-				CallableStatement cs = conn
-						.prepareCall("{call Wx_Del_DengJi (?)}");
+				CallableStatement cs = conn.prepareCall("{call Wx_Del_DengJi (?)}");
 				cs.setString(1, work_no);
 				cs.execute();
 			}
 		});
-
 		return jsons.json(1, 1, 1, "终止成功");
 	}
 

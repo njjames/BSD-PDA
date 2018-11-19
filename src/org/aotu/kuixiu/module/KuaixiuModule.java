@@ -18,10 +18,8 @@ import java.util.Map;
 
 //
 import org.aotu.Jsons;
-import org.aotu.offsetPager;
 import org.aotu.VIPcard.entity.Kehu_CardEntity;
 import org.aotu.VIPcard.module.card;
-import org.aotu.offer.entity.feilvEntity;
 import org.aotu.order.entity.Work_ll_gzEntity;
 import org.aotu.order.entity.Work_mx_gzEntity;
 import org.aotu.order.entity.Work_pz_gzEntity;
@@ -171,7 +169,7 @@ public class KuaixiuModule {
 //                String num = add(gongsiNo, caozuoyuan_xm);
                 String num;
                 try {
-                    num = BsdUtils.createNewBill(dao, gongsiNo, caozuoyuan_xm, 2007);
+                    num = BsdUtils.createNewBill(dao, gongsiNo, caozuoyuan_xm, 2007, true);
                 } catch (Exception e) {
                     return jsons.json(1, 1, 0, e.getMessage());
                 }
