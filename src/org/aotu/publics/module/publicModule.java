@@ -2236,6 +2236,16 @@ public class publicModule {
     }
 
     /**
+     * 把会员卡的信息移除
+     */
+    @At
+    @Ok("raw:json")
+    public String removeWxjdCard(String work_no) {
+        dao.execute(Sqls.create("update work_pz_gz set card_no='',card_kind='',card_itemrate=0,card_peijrate=0 where work_no='" + work_no + "'"));
+        return "success";
+    }
+
+    /**
      * 更新维修用料中会员卡有特殊处理的价格
      */
     @At

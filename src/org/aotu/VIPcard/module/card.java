@@ -222,6 +222,62 @@ public class card {
         }
 	}
 
+    /**
+     * 根据卡号获取卡信息
+     *
+     * @param card_no
+     * @return
+     */
+    @At
+    @Ok("raw:json")
+    public String wxjdReadCardNo(String card_no, String che_no, String work_no) {
+        Kehu_CardEntity kehuCard = getVipCard(card_no);
+        if (kehuCard != null) {
+            if (kehuCard.isFlag_use()) {
+                return jsons.json(1, 1, 0, "此卡号已经禁用！");
+            }
+            if (kehuCard.isFlag_guashi()) {
+                return jsons.json(1, 1, 0, "此卡号已经挂失！");
+            }
+            if (kehuCard.isFlag_enddate()) {
+                return jsons.json(1, 1, 0, "此卡号已经到期！");
+            }
+            if (card_no != null && card_no.length() > 1) {
+                Sql sql_ = Sqls.queryRecord("SELECT flag_single FROM cardsysset ");
+                dao.execute(sql_);
+                List<Record> res_1 = sql_.getList(Record.class);
+                int flag_single = res_1.get(0).getInt("flag_single");
+                if(flag_single != 0) {
+                    Sql sql1 = Sqls.queryRecord("select count(*) as cnt from kehu_card a, kehu_card_che b " +
+                            "where a.card_no = b.card_no and flag_use  = 0 and flag_guashi = 0 and flag_enddate = 0 and isnull(flag_shoukuan,0) = 1 " +
+                            "and b.card_no = '" + card_no + "' and b.che_no ='" + che_no + "'");
+                    dao.execute(sql1);
+                    List<Record> res1 = sql1.getList(Record.class);
+                    int cnt = res1.get(0).getInt("cnt");
+                    if (cnt == 0)
+                        return jsons.json(1, 1, 0, "系统设置为“关联式会员制度”，此会员卡非该辆车所有，不能使用！");
+                }
+            }
+            String itemRate = "1";
+            String peijRate = "1";
+            String card_kind = "";
+            Sql sql1 = Sqls.queryRecord("select a.card_kind,b.ItemRate,b.PeijRate from kehu_card a,CardKind b where a.card_kind=b.cardkind and a.card_no ='" + card_no + "'");
+            dao.execute(sql1);
+            List<Record> res1 = sql1.getList(Record.class);
+            if (res1.size() > 0) {
+                card_kind = res1.get(0).getString("card_kind");
+                itemRate = res1.get(0).getString("ItemRate");
+                peijRate = res1.get(0).getString("PeijRate");
+            }
+            // 把卡的信息更新到工作表中
+            dao.execute(Sqls.create("update work_pz_gz set card_no='" + card_no + "',card_kind='" + card_kind +
+                    "',card_itemrate=" + itemRate + ",card_peijrate=" + peijRate + " where work_no='" + work_no + "'"));
+            return jsons.json(1, 1, 1, card_no);
+        } else {
+            return jsons.json(1, 1, 0, "不存在此会员卡！");
+        }
+    }
+
 	/**
 	 * 获取卡信息
 	 * 
