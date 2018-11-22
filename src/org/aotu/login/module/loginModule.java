@@ -52,13 +52,19 @@ public class loginModule {
         String userName = req.getParameter("name");
         String psd = req.getParameter("psd");
         // boolean result=false;//登录成功与否的结果。默认为false
-        userEntity user = new userEntity();
-        if (userName != "") {
-            user = dao.fetch(
-                    userEntity.class,
-                    Cnd.where("caozuoyuan_xm", "=", userName).
+        userEntity user;
+        if (userName != null && userName.length() > 0) {
+            user = dao.fetch(userEntity.class, Cnd.where("caozuoyuan_xm", "=", userName).
                             and("caozuoyuan_password", "=", psd));
             if (user != null) {
+                // 判断用户是否在线
+                Sql sql = Sqls.queryRecord("select count(*) as cnt from sm_caozuoyuan_online where isOnline=1 and caozuoyuan_xm='" + userName + "'");
+                dao.execute(sql);
+                List<Record> list = sql.getList(Record.class);
+                int cnt = list.get(0).getInt("cnt");
+                if (cnt > 0) {
+                    return jsons.json(1, 1, 0, "当前操作员已在线！");
+                }
                 // ///////////////////新增业务////////////////////////////////////////////
                 Sql sql1 = Sqls
                         .queryRecord("select sys_ydbgnum,sys_flag_huowei,isnull(flag_pad_overtime,'') as flag_pad_overtime  from sm_system_info");

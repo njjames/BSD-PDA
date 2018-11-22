@@ -33,10 +33,11 @@ public class carModule {
 	
 	@Inject
 	Jsons jsons;
-	
-	
+
+
 	/**
 	 * 查询车辆信息
+	 *
 	 * @param pageNumber
 	 * @param che_no
 	 * @param che_sj
@@ -45,29 +46,21 @@ public class carModule {
 	 */
 	@At
 	@Ok("raw:json")
-	public String clxx(int pageNumber,@Param("che_no")String che_no,@Param("che_sj")String che_sj,String kehu_mc){
-		System.out.println("================="+kehu_mc);
-		Cnd cb = Cnd.where("1","=","1");
-		if(che_no!=null && che_no!=""){
-			cb = cb.and("che_no","like","%"+che_no+"%");
+	public String clxx(int pageNumber, @Param("che_no") String che_no, @Param("che_sj") String che_sj, String kehu_mc) {
+		Cnd cnd = Cnd.where("1", "=", "1");
+		if (che_no != null && che_no != "") {
+			cnd = cnd.and("che_no", "like", "%" + che_no + "%");
 		}
-//		if(che_sj!=null && che_sj!=""){
-//			cb = cb.and("kehu_mc","like","%"+che_sj+"%");
-//		}
-		if(kehu_mc!=null&& kehu_mc!=""){
-			cb.and("kehu_mc","like","%"+kehu_mc+"%");
+		if (kehu_mc != null && kehu_mc != "") {
+			cnd.and("kehu_mc", "like", "%" + kehu_mc + "%");
 		}
-		//cb.and("che_xingzhi","!=","");
 		Pager pager = dao.createPager(pageNumber, 20);
-		List<Work_cheliang_sm_vEntity> result;
-			result = dao.query(Work_cheliang_sm_vEntity.class, cb.desc("id"),pager);
-		
-		String json = Json.toJson(result, JsonFormat.full());
-		if (result.size() != 0) {
-			return jsons.json(1, result.size(), 1, json);
+		List<Work_cheliang_sm_vEntity> result = dao.query(Work_cheliang_sm_vEntity.class, cnd.desc("id"), pager);
+		if (result.size() > 0) {
+            String json = Json.toJson(result, JsonFormat.full());
+            return jsons.json(1, 1, 1, json);
 		}
-		return jsons.json(1, result.size(), 0, json);
-
-	  }	
+		return jsons.json(1, 1, 0, "没有车辆信息");
+	}
 	
 }

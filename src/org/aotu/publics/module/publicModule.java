@@ -82,6 +82,7 @@ import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.json.Json;
 import org.nutz.json.JsonFormat;
 import org.nutz.lang.Strings;
+import org.nutz.lang.random.R;
 import org.nutz.mvc.annotation.AdaptBy;
 import org.nutz.mvc.annotation.At;
 import org.nutz.mvc.annotation.Ok;
@@ -2458,5 +2459,39 @@ public class publicModule {
         dao.execute(sql13);
     }
 
+    @At
+    @Ok("raw:json")
+    public String registephone(String diviceUuid) {
+        Sql sql = Sqls.queryRecord("select count(*) as cnt from sm_HardDisk_No_pingban where HardDisk_No_app='" + diviceUuid + "'");
+        dao.execute(sql);
+        List<Record> list = sql.getList(Record.class);
+        int cnt = list.get(0).getInt("cnt");
+        if (cnt > 0) {
+            return "fail";
+        }
+        dao.execute(Sqls.create("insert into sm_HardDisk_No_pingban(HardDisk_No_app) values('" + diviceUuid + "')"));
+        return "success";
+    }
 
+    @At
+    @Ok("raw:json")
+    public String addOnline(String name, String sid) {
+        dao.execute(Sqls.create("insert into sm_caozuoyuan_online(caozuoyuan_xm,ModuleName,HardDiskNo,ReportTime,IsOnLine)" +
+                "values('" + name + "','pad','" + sid + "',getdate(),1)"));
+        return "success";
+    }
+
+    @At
+    @Ok("raw:json")
+    public String removeOnline(String name) {
+        dao.execute(Sqls.create("delete from sm_caozuoyuan_online where caozuoyuan_xm='" + name + "'"));
+        return "success";
+    }
+
+    @At
+    @Ok("raw:json")
+    public String updateOnline(String name) {
+        dao.execute(Sqls.create("update sm_caozuoyuan_online set ReportTime=getdate() where caozuoyuan_xm='" + name + "'"));
+        return "success";
+    }
 }
