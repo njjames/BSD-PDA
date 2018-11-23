@@ -2476,6 +2476,7 @@ public class publicModule {
     @At
     @Ok("raw:json")
     public String addOnline(String name, String sid) {
+        dao.execute(Sqls.create("delete from sm_caozuoyuan_online where caozuoyuan_xm='" + name + "'"));
         dao.execute(Sqls.create("insert into sm_caozuoyuan_online(caozuoyuan_xm,ModuleName,HardDiskNo,ReportTime,IsOnLine)" +
                 "values('" + name + "','pad','" + sid + "',getdate(),1)"));
         return "success";

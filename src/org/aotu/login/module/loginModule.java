@@ -58,7 +58,8 @@ public class loginModule {
                             and("caozuoyuan_password", "=", psd));
             if (user != null) {
                 // 判断用户是否在线
-                Sql sql = Sqls.queryRecord("select count(*) as cnt from sm_caozuoyuan_online where isOnline=1 and caozuoyuan_xm='" + userName + "'");
+                Sql sql = Sqls.queryRecord("select count(*) as cnt from sm_caozuoyuan_online " +
+                        "where isOnline=1 and caozuoyuan_xm='" + userName + "' and datediff(second, ReportTime, getdate())<=120");
                 dao.execute(sql);
                 List<Record> list = sql.getList(Record.class);
                 int cnt = list.get(0).getInt("cnt");
