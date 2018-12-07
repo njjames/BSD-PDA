@@ -30,11 +30,14 @@ import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import javafx.collections.ObservableMap;
 import org.aotu.Jsons;
 import org.aotu.VIPcard.entity.CardKindEntity;
 import org.aotu.appointment.entity.Work_yuyue_pzEntity;
 import org.aotu.offer.entity.baoJiaEntity;
 import org.aotu.offer.entity.feilvEntity;
+import org.aotu.offer.entity.offerEntity;
+import org.aotu.order.entity.Work_ll_gzEntity;
 import org.aotu.order.entity.Work_pz_gzEntity;
 import org.aotu.publics.eneity.GongzryEntity;
 import org.aotu.publics.eneity.Jizhang_yhdyEntity;
@@ -68,14 +71,12 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.nutz.dao.Cnd;
-import org.nutz.dao.ConnCallback;
-import org.nutz.dao.Dao;
-import org.nutz.dao.Sqls;
+import org.nutz.dao.*;
 import org.nutz.dao.entity.Record;
 import org.nutz.dao.pager.Pager;
 import org.nutz.dao.sql.Sql;
 import org.nutz.dao.sql.SqlCallback;
+import org.nutz.dao.util.Daos;
 import org.nutz.ioc.impl.PropertiesProxy;
 import org.nutz.ioc.loader.annotation.Inject;
 import org.nutz.ioc.loader.annotation.IocBean;
@@ -95,6 +96,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.nutz.trans.Atom;
+import org.nutz.trans.Trans;
 
 /**
  * title:TItemType
@@ -1267,7 +1270,7 @@ public class publicModule {
      */
     @At
     @Ok("raw:json")
-    public String clandkh(String che_no) {
+    public String clandkh(String che_no, String billtype, String gongsino) {
         Date date = new Date();
         short d = 1;
         Work_cheliang_smEntity result = dao.fetch(Work_cheliang_smEntity.class, Cnd.where("che_no", "=", che_no));
@@ -1290,6 +1293,7 @@ public class publicModule {
             dao.insert(ke);
             map.put("kehu", ke);
             map.put("isnew", true);
+            map.put("draftbillcount", 0); // 新车肯定没有草稿单据
             String json1 = Json.toJson(map, JsonFormat.full());
             return jsons.json(1, 1, 1, json1);
         } else {
@@ -1298,10 +1302,506 @@ public class publicModule {
             map.put("kehu", fetch);
             map.put("cheliang", result);
             map.put("isnew", false);
+            if (billtype != null && billtype.length() > 0) {
+                map.put("draftbillcount", getDraftbillCount(che_no, billtype, gongsino));
+            } else {
+                map.put("draftbillcount", 0);
+            }
             String json = Json.toJson(map, JsonFormat.full());
             return jsons.json(1, 1, 1, json);
         }
 
+    }
+
+    /**
+     * 根据单据类型，获取草稿单据的数量
+     * @param che_no
+     * @param billtype
+     * @param gongsino
+     * @return
+     */
+    private int getDraftbillCount(String che_no, String billtype, String gongsino) {
+        int count = 0;
+        switch (billtype) {
+            case "mrkx":
+                count = dao.count(Work_pz_gzEntity.class,
+                        Cnd.where("flag_fast", "=", 1).and("che_no", "=", che_no).and("gongsino", "=", gongsino));
+                break;
+            case "ksbj":
+                count = dao.count(offerEntity.class, Cnd.where("che_no", "=", che_no).and("gongsino", "=", gongsino));
+                break;
+            case "wxyy":
+                count = dao.count(Work_yuyue_pzEntity.class, Cnd.where("che_no", "=", che_no).and("gongsino", "=", gongsino));
+                break;
+            case "wxjd":
+                count = dao.count(Work_pz_gzEntity.class,
+                        Cnd.where("flag_fast", "=", 0).and("che_no", "=", che_no)
+                                .and("mainstate", "=", -1).and("gongsino", "=", gongsino));
+                break;
+        }
+        return count;
+    }
+
+    @At
+    @Ok("raw:json")
+    public String getDraftBillInfo(String che_no, String billtype, String gongsino) {
+        List<HashMap<String, Object>> list = new ArrayList<>();
+        switch (billtype) {
+            case "mrkx":
+                List<Work_pz_gzEntity> pzGzEntities = dao.query(Work_pz_gzEntity.class,
+                        Cnd.where("flag_fast", "=", 1).and("che_no", "=", che_no)
+                                .and("gongsino", "=", gongsino).desc("xche_jdrq"),
+                        null,
+                        "work_no|xche_jdrq");
+                for (Work_pz_gzEntity entity : pzGzEntities) {
+                    HashMap<String, Object> map = new HashMap<>();
+                    map.put("billNo", entity.getWork_no());
+                    map.put("billRq", entity.getXche_jdrq());
+                    list.add(map);
+                }
+                break;
+            case "wxjd":
+                List<Work_pz_gzEntity> pzEntities = dao.query(Work_pz_gzEntity.class,
+                        Cnd.where("flag_fast", "=", 0).and("che_no", "=", che_no)
+                                .and("mainstate", "=", -1).and("gongsino", "=", gongsino).desc("xche_jdrq"),
+                        null,
+                        "work_no|xche_jdrq");
+                for (Work_pz_gzEntity entity : pzEntities) {
+                    HashMap<String, Object> map = new HashMap<>();
+                    map.put("billNo", entity.getWork_no());
+                    map.put("billRq", entity.getXche_jdrq());
+                    list.add(map);
+                }
+                break;
+            case "ksbj":
+                List<offerEntity> offerEntities = dao.query(offerEntity.class,
+                        Cnd.where("che_no", "=", che_no).and("gongsino", "=", gongsino).desc("list_jlrq"),
+                        null,
+                        "list_no|List_jlrq");
+                for (offerEntity entity : offerEntities) {
+                    HashMap<String, Object> map = new HashMap<>();
+                    map.put("billNo", entity.getList_no());
+                    map.put("billRq", entity.getList_jlrq());
+                    list.add(map);
+                }
+                break;
+            case "wxyy":
+                List<Work_yuyue_pzEntity> yuyuePzEntities = dao.query(Work_yuyue_pzEntity.class,
+                        Cnd.where("che_no", "=", che_no).and("gongsino", "=", gongsino).desc("yuyue_jlrq"));
+                for (Work_yuyue_pzEntity entity : yuyuePzEntities) {
+                    HashMap<String, Object> map = new HashMap<>();
+                    map.put("billNo", entity.getYuyue_no());
+                    map.put("billRq", entity.getYuyue_jlrq());
+                    list.add(map);
+                }
+                break;
+        }
+        String json = Json.toJson(list);
+        return jsons.json(1, 1, 1, json);
+    }
+
+    @At
+    @Ok("raw:json")
+    public String deleteDraftBill(String billNo, String billtype) {
+        try {
+            switch (billtype) {
+                case "mrkx":
+                    deleteMRKXDraftBill(billNo);
+                    break;
+                case "wxjd":
+                    deleteWXJDraftBill(billNo);
+                    break;
+                case "ksbj":
+                    deleteKSBJraftBill(billNo);
+                    break;
+                case "wxyy":
+                    deleteWXYYraftBill(billNo);
+                    break;
+            }
+        } catch (Exception e) {
+            return jsons.json(1, 1, 0, e.getMessage());
+        }
+        return jsons.json(1, 1, 1, "作废成功");
+    }
+
+    /**
+     * 维修预约草稿单作废
+     * @param billNo
+     */
+    private void deleteWXYYraftBill(final String billNo) {
+        Trans.exec(new Atom() {
+            @Override
+            public void run() {
+                dao.execute(Sqls.create("delete from work_yuyue_pz where yuyue_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_yuyue_wxxm where yuyue_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_yuyue_ll where yuyue_no='" + billNo + "'"));
+            }
+        });
+    }
+
+    /**
+     * 快速报价草稿单作废
+     * @param billNo
+     */
+    private void deleteKSBJraftBill(final String billNo) {
+        Trans.exec(new Atom() {
+            @Override
+            public void run() {
+                dao.execute(Sqls.create("delete from work_BaoJia_pz where List_No='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_BaoJia_wxxm where List_No='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_BaoJia_ll where List_No='" + billNo + "'"));
+            }
+        });
+    }
+
+    /**
+     * 接待登记草稿单作废
+     * @param billNo
+     */
+    private void deleteWXJDraftBill(final String billNo) {
+        Sql sqlczy = Sqls.fetchString("select using_czy from work_pz_gz where work_no='" + billNo + "'");
+        dao.execute(sqlczy);
+        String using_czy = sqlczy.getString();
+        if (using_czy != null && using_czy.length() > 0) {
+            throw new RuntimeException("此单据正被其他人打开，不能作废！");
+        }
+        Sql sql = Sqls.queryRecord("select count(*) cnt from work_ckmx_sj mx,work_ckpz_sj pz where mx.ling_no=pz.ling_no and work_no='" + billNo + "'");
+        dao.execute(sql);
+        List<Record> list = sql.getList(Record.class);
+        if (list.get(0).getInt("cnt") > 0) {
+            throw new RuntimeException("已经领料不能作废，请走空单子！");
+        }
+        Sql sql1 = Sqls.queryRecord("select count(*) cnt from work_ckpz_gz where work_no='" + billNo + "'");
+        dao.execute(sql1);
+        List<Record> list1 = sql1.getList(Record.class);
+        if (list1.get(0).getInt("cnt") > 0) {
+            throw new RuntimeException("有领料单尚未出库，请先作废领料单！");
+        }
+        Trans.exec(new Atom() {
+            @Override
+            public void run() {
+                Work_pz_gzEntity pzGzEntity = Daos.ext(dao, FieldFilter.create(Work_pz_gzEntity.class, "yuyue_no"))
+                        .fetch(Work_pz_gzEntity.class, billNo);
+                String yuyue_no = pzGzEntity.getYuyue_no();
+                if (yuyue_no != null && yuyue_no.length() > 0) {
+                    if (!yuyue_no.substring(0, 2).equalsIgnoreCase("YY") && !yuyue_no.substring(0, 2).equalsIgnoreCase("WB")) {
+                        dao.execute(Sqls.create("UPDATE weixin_yuyue SET yuyue_zhuangtai='未生成预约单' where reco_no=" + yuyue_no));
+                    }
+                }
+                // 这里这样删除，CS程序是调的存储过程，不过内容一样
+                dao.execute(Sqls.create("delete from work_pz_gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_mx_gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_ll_gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_wjg_gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_pg_gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from check_mx_gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from Work_BiaoShi_Gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from Work_Fj_Gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_mx_jianyi where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_ll_jianyi where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("UPDATE work_yuyue_pz SET yuyue_IsImpt=0,yuyue_progress='未进店',work_no='' where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("UPDATE work_baojia_pz SET list_IsImpt=0,list_progress='未进店',work_no='' where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("UPDATE work_gujia_pz SET flag_IsImpt=0 where gujia_no=(select gujia_no from work_pz_gz where work_no='" + billNo + "')"));
+            }
+        });
+    }
+
+    /**
+     * 美容快修草稿单作废
+     * @param billNo
+     */
+    private void deleteMRKXDraftBill(final String billNo) {
+        Sql sql = Sqls.fetchString("select using_czy from work_pz_gz where work_no='" + billNo + "'");
+        dao.execute(sql);
+        String using_czy = sql.getString();
+        if (using_czy != null && using_czy.length() > 0) {
+            throw new RuntimeException("此单据正被其他人打开，不能作废！");
+        }
+        int count = dao.count(Work_ll_gzEntity.class, Cnd.where("work_no", "=", billNo).and("flag_chuku", "=", 1));
+        if (count > 0) {
+            throw new RuntimeException("已有出库配件，请退回出库配件再作废！");
+        }
+        Trans.exec(new Atom() {
+            @Override
+            public void run() {
+                Work_pz_gzEntity pzGzEntity = Daos.ext(dao, FieldFilter.create(Work_pz_gzEntity.class, "yuyue_no|che_no"))
+                        .fetch(Work_pz_gzEntity.class, billNo);
+                String yuyue_no = pzGzEntity.getYuyue_no();
+                String che_no = pzGzEntity.getChe_no();
+                if (yuyue_no != null && yuyue_no.length() > 0) {
+                    if (!yuyue_no.substring(0, 2).equalsIgnoreCase("YY") && !yuyue_no.substring(0, 2).equalsIgnoreCase("WB")) {
+                        dao.execute(Sqls.create("UPDATE weixin_yuyue SET yuyue_zhuangtai='未生成预约单' where reco_no=" + yuyue_no));
+                    }
+                }
+                dao.execute(Sqls.create("delete from work_pz_gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_mx_gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_ll_gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_wjg_gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_pg_gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from check_mx_gz where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_mx_jianyi where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("delete from work_ll_jianyi where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("UPDATE work_yuyue_pz SET yuyue_IsImpt=0,yuyue_progress='未进店',work_no='' where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("UPDATE work_baojia_pz SET list_IsImpt=0,list_progress='未进店',work_no='' where work_no='" + billNo + "'"));
+                dao.execute(Sqls.create("UPDATE work_ckpz_sj SET work_no='',ling_bz='" + che_no + "配料出库、退库后作废' where work_no='" + billNo + "'"));
+            }
+        });
+    }
+
+    @At
+    @Ok("raw:json")
+    public String getNewBill(String che_no, String gongsiNo, String caozuoyuan_xm, String billtype, String oldbillno) {
+        String result = "";
+        try {
+            switch (billtype) {
+                case "mrkx":
+                    result = getNewMRKXBill(che_no, gongsiNo, caozuoyuan_xm, oldbillno);
+                    break;
+                case "wxjd":
+                    result = getNewWXJDBill(che_no, gongsiNo, caozuoyuan_xm, oldbillno);
+                    break;
+                case "ksbj":
+                    result = getNewKSBJBill(che_no, gongsiNo, caozuoyuan_xm);
+                    break;
+                case "wxyy":
+                    result = getNewWXYYBill(che_no, gongsiNo, caozuoyuan_xm);
+                    break;
+            }
+        } catch (Exception e) {
+            return jsons.json(1, 1, 0, e.getMessage());
+        }
+        if (!result.equals("")) {
+            return jsons.json(1, 1, 1, result);
+        }
+        return jsons.json(1, 1, 0, "新建单据失败");
+    }
+
+    private String getNewWXYYBill(String che_no, String gongsiNo, String caozuoyuan_xm) {
+        String num;
+        try {
+            num = BsdUtils.createNewBill(dao, gongsiNo, caozuoyuan_xm, 2019, false);
+        } catch (Exception e) {
+            return jsons.json(1, 1, 0, e.getMessage());
+        }
+        Work_yuyue_pzEntity pz = dao.fetch(Work_yuyue_pzEntity.class, num);
+        Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, che_no);
+        if (che != null) {
+            pz.setChe_no(che_no);
+            pz.setChe_vin(che.getChe_vin());
+            pz.setChe_fd(che.getChe_fd());
+            pz.setChe_cx(che.getChe_cx());
+            pz.setChe_wxys(che.getChe_wxys());
+            pz.setChe_zjno(che.getChe_zjno());
+            pz.setGcsj(che.getChe_gcrq());
+            pz.setYuyue_lc(che.getChe_next_licheng());
+            pz.setYuyue_scjcrq(new Date());
+            pz.setYuyue_jlrq(new Date());
+            pz.setWork_no("");
+            pz.setYuyue_state(0);
+            pz.setYuyue_progress("");
+            KehuEntity kehu = dao.fetch(KehuEntity.class, che.getKehu_no());
+            if (kehu != null) {
+                pz.setKehu_no(kehu.getKehu_no());
+                pz.setKehu_mc(kehu.getKehu_mc());
+                pz.setKehu_xm(kehu.getKehu_xm());
+                pz.setKehu_dz(kehu.getKehu_dz());
+                pz.setKehu_sj(kehu.getKehu_sj());
+                pz.setKehu_dh(kehu.getKehu_dh());
+                if (kehu.getKehu_jb() != null && !"".equals(kehu.getKehu_jb())) {
+                    pz.setYuyue_jbr(kehu.getKehu_jb());
+                    Sql sql = Sqls.queryRecord("select dept_mc from gongzry where reny_xm='" + kehu.getKehu_jb() + "'");
+                    dao.execute(sql);
+                    List<Record> list1 = sql.getList(Record.class);
+                    if (list1.size() > 0) {
+                        pz.setDept_mc(list1.get(0).getString("dept_mc"));
+                    }
+                }
+            }
+        }
+        dao.update(pz, "^che_no|che_vin|che_fd|che_cx|che_wxys|che_zjno|yuyue_lc|yuyue_scjcrq|yuyue_jlrq|work_no|yuyue_state|yuyue_progress|kehu_no|kehu_mc|kehu_xm|kehu_dz|kehu_sj|kehu_dh|xche_jb|dept_mc$");
+        return Json.toJson(pz, JsonFormat.full());
+    }
+
+    private String getNewKSBJBill(String che_no, String gongsiNo, String caozuoyuan_xm) {
+        String num;
+        try {
+            num = BsdUtils.createNewBill(dao, gongsiNo, caozuoyuan_xm, 2021, false);
+        } catch (Exception e) {
+            return jsons.json(1, 1, 0, e.getMessage());
+        }
+        offerEntity offer = dao.fetch(offerEntity.class, num);
+        Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, che_no);
+        if (che != null) {
+            offer.setChe_no(che_no);
+            offer.setChe_cx(che.getChe_cx());
+            offer.setChe_vin(che.getChe_vin());
+            offer.setGcsj(che.getChe_gcrq());
+            offer.setList_lc(che.getChe_next_licheng());
+            offer.setChe_fd(che.getChe_fd());
+            offer.setChe_fd_xh(che.getChe_fd_xh());
+            offer.setChe_dp_xh(che.getChe_dp_xh());
+            offer.setChe_pp(che.getChe_pp());
+            offer.setChe_wxys(che.getChe_wxys());
+            offer.setChe_zjno(che.getChe_zjno());
+            KehuEntity kehu = dao.fetch(KehuEntity.class, che.getKehu_no());
+            if (kehu != null) {
+                offer.setKehu_mc(kehu.getKehu_mc());
+                offer.setKehu_dh(kehu.getKehu_dh());
+                offer.setKehu_no(kehu.getKehu_no());
+                offer.setKehu_xm(kehu.getKehu_xm());
+                offer.setKehu_dz(kehu.getKehu_dz());
+                offer.setKehu_yb(kehu.getKehu_yb());
+                offer.setKehu_sj(kehu.getKehu_sj());
+                if (kehu.getKehu_jb() != null && !"".equals(kehu.getKehu_jb())) {
+                    offer.setList_jbr(kehu.getKehu_jb());
+                    Sql sql = Sqls.queryRecord("select dept_mc from gongzry where reny_xm='" + kehu.getKehu_jb() + "'");
+                    dao.execute(sql);
+                    List<Record> list1 = sql.getList(Record.class);
+                    if (list1.size() > 0) {
+                        offer.setDept_mc(list1.get(0).getString("dept_mc"));
+                    }
+                }
+            }
+        }
+        dao.update(offer, "^che_no|che_vin|che_fd|che_fd_xh|che_dp_xh|che_pp|che_cx|che_wxys|che_zjno|List_lc|kehu_no|kehu_mc|kehu_xm|kehu_dz|kehu_sj|kehu_dh|kehu_yb|xche_jb|dept_mc$");
+        return Json.toJson(offer, JsonFormat.full());
+    }
+
+    private String getNewWXJDBill(final String che_no, final String gongsiNo, final String caozuoyuan_xm, final String oldbillno) {
+        final Work_pz_gzEntity[] pz = new Work_pz_gzEntity[1];
+        try {
+            Trans.exec(new Atom() {
+                @Override
+                public void run() {
+                    if (!"".equals(oldbillno)) {
+                        dao.execute(Sqls.create("update work_pz_gz set using_czy='' where work_no='" + oldbillno + "'"));
+                    }
+                    String num = BsdUtils.createNewBill(dao, gongsiNo, caozuoyuan_xm, 2007, false);
+                    pz[0] = dao.fetch(Work_pz_gzEntity.class, num);
+                    Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, che_no);
+                    if (che != null) {
+                        pz[0].setChe_no(che_no);
+                        pz[0].setChe_vin(che.getChe_vin());
+                        pz[0].setChe_fd(che.getChe_fd());
+                        pz[0].setChe_cx(che.getChe_cx());
+                        pz[0].setChe_wxys(che.getChe_wxys());
+                        pz[0].setChe_zjno(che.getChe_zjno());
+                        pz[0].setGcsj(che.getChe_gcrq());
+                        pz[0].setXche_lc(che.getChe_next_licheng());
+                        KehuEntity kehu = dao.fetch(KehuEntity.class, che.getKehu_no());
+                        if (kehu != null) {
+                            pz[0].setKehu_no(kehu.getKehu_no());
+                            pz[0].setKehu_mc(kehu.getKehu_mc());
+                            pz[0].setKehu_xm(kehu.getKehu_xm());
+                            pz[0].setKehu_dz(kehu.getKehu_dz());
+                            pz[0].setKehu_sj(kehu.getKehu_sj());
+                            pz[0].setKehu_dh(kehu.getKehu_dh());
+                            if (kehu.getKehu_jb() != null && !"".equals(kehu.getKehu_jb())) {
+                                pz[0].setXche_jb(kehu.getKehu_jb());
+                                Sql sql = Sqls.queryRecord("select dept_mc from gongzry where reny_xm='" + kehu.getKehu_jb() + "'");
+                                dao.execute(sql);
+                                List<Record> list = sql.getList(Record.class);
+                                if (list.size() > 0) {
+                                    pz[0].setDept_mc(list.get(0).getString("dept_mc"));
+                                }
+                            }
+                        }
+                    }
+                    pz[0].setMainstate(-1);
+                    pz[0].setUsing_Czy(caozuoyuan_xm); // 新建单据，把操作员使用占上
+                    dao.update(pz[0], "^che_no|che_vin|che_fd|che_cx|che_wxys|che_zjno|gcsj|xche_lc|kehu_no|kehu_mc|kehu_xm|kehu_dz|kehu_sj|kehu_dh|xche_jb|dept_mc|mainstate|Using_Czy$");
+                    Sql sql1 = Sqls.queryRecord("select * from sm_cangk where isnull(cangk_hide,0) = 0 ");
+                    dao.execute(sql1);
+                    List<Record> res = sql1.getList(Record.class);
+                    for (Record record : res) {
+                        if (pz[0].getCangk_dm() != null && !pz[0].getCangk_dm().equals("")) {
+                            // 如果草稿单中的仓库代码和仓库中的代码相同，则把仓库名称赋给草稿单中的内容
+                            if (record.getString("cangk_dm").equals(pz[0].getCangk_dm())) {
+                                pz[0].setCangk_mc(record.getString("cangk_mc"));
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return Json.toJson(pz[0], JsonFormat.full());
+    }
+
+    private String getNewMRKXBill(final String che_no, final String gongsiNo, final String caozuoyuan_xm, final String oldbillno) {
+        final Work_pz_gzEntity[] pz = new Work_pz_gzEntity[1];
+        try {
+            Trans.exec(new Atom() {
+                @Override
+                public void run() {
+                    if (!"".equals(oldbillno)) {
+                        dao.execute(Sqls.create("update work_pz_gz set using_czy='' where work_no='" + oldbillno + "'"));
+                    }
+                    String num = BsdUtils.createNewBill(dao, gongsiNo, caozuoyuan_xm, 2007, true);
+                    pz[0] = dao.fetch(Work_pz_gzEntity.class, num);
+                    Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, che_no);
+                    // 设置草稿单上车辆和客户的信息
+                    if (che != null) {
+                        pz[0].setChe_no(che_no);
+                        pz[0].setChe_vin(che.getChe_vin());
+                        pz[0].setChe_fd(che.getChe_fd());
+                        pz[0].setChe_cx(che.getChe_cx());
+                        pz[0].setChe_wxys(che.getChe_wxys());
+                        pz[0].setChe_zjno(che.getChe_zjno());
+                        pz[0].setGcsj(che.getChe_gcrq());
+                        pz[0].setXche_lc(che.getChe_next_licheng());
+                        KehuEntity kehu = dao.fetch(KehuEntity.class, che.getKehu_no());
+                        if (kehu != null) {
+                            pz[0].setKehu_no(kehu.getKehu_no());
+                            pz[0].setKehu_mc(kehu.getKehu_mc());
+                            pz[0].setKehu_xm(kehu.getKehu_xm());
+                            pz[0].setKehu_dz(kehu.getKehu_dz());
+                            pz[0].setKehu_sj(kehu.getKehu_sj());
+                            pz[0].setKehu_dh(kehu.getKehu_dh());
+                            if (kehu.getKehu_jb() != null && !"".equals(kehu.getKehu_jb())) {
+                                pz[0].setXche_jb(kehu.getKehu_jb());
+                                Sql sql = Sqls.queryRecord("select dept_mc from gongzry where reny_xm='" + kehu.getKehu_jb() + "'");
+                                dao.execute(sql);
+                                List<Record> list = sql.getList(Record.class);
+                                if (list.size() > 0) {
+                                    pz[0].setDept_mc(list.get(0).getString("dept_mc"));
+                                }
+                            }
+                        }
+                    }
+                    pz[0].setMainstate(-1);
+                    pz[0].setUsing_Czy(caozuoyuan_xm); // 新建单据，把操作员使用占上
+                    dao.update(pz[0], "^che_no|che_vin|che_fd|che_cx|che_wxys|che_zjno|gcsj|xche_lc|kehu_no|kehu_mc|kehu_xm|kehu_dz|kehu_sj|kehu_dh|xche_jb|dept_mc|mainstate|Using_Czy$");
+                    // 查询仓库，准备获取名字
+                    Sql sql1 = Sqls.queryRecord("select * from sm_cangk where isnull(cangk_hide,0) = 0 ");
+                    dao.execute(sql1);
+                    List<Record> res = sql1.getList(Record.class);
+                    for (Record record : res) {
+                        if (pz[0].getCangk_dm() != null && !pz[0].getCangk_dm().equals("")) {
+                            // 如果草稿单中的仓库代码和仓库中的代码相同，则把仓库名称赋给草稿单中的内容
+                            if (record.getString("cangk_dm").equals(pz[0].getCangk_dm())) {
+                                pz[0].setCangk_mc(record.getString("cangk_mc"));
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            });
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
+        return Json.toJson(pz[0], JsonFormat.full());
+    }
+
+    @At
+    public void removeUsingCzy(String work_no) {
+        dao.execute(Sqls.create("update work_pz_gz set using_czy='' where work_no='" + work_no + "'"));
     }
 
     //根据客户名称模糊获得客户信息如果客户名称为空则查询所有数据

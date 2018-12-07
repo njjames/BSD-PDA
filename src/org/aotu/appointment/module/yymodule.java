@@ -1,5 +1,6 @@
 package org.aotu.appointment.module;
 
+import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -72,76 +73,16 @@ public class yymodule {
 	@Ok("raw:json")
 	public String jbxx(String che_no, String gongsiNo, String caozuoyuan_xm, String yuyue_no) {
 		Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, che_no);
-		Work_yuyue_pzEntity pz;
-		if (!"".equals(yuyue_no)) {
-			pz = dao.fetch(Work_yuyue_pzEntity.class, yuyue_no);
-            pz.setGcsj(che.getChe_gcrq());
-		} else {
-            if (gongsiNo == null || caozuoyuan_xm == null) {
-                return jsons.json(1, 1, 0, "公司编号或操作员不能为空");
-            }
-			java.util.Calendar rightNow = java.util.Calendar.getInstance();
-			java.text.SimpleDateFormat sim = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-			// 如果是后退几天，就写 -天数 例如：
-			rightNow.add(java.util.Calendar.DAY_OF_MONTH, -20);
-			// 进行时间转换
-			String date = sim.format(rightNow.getTime());
-			List<Work_yuyue_pzEntity> list = dao.query(Work_yuyue_pzEntity.class,
-					Cnd.where("che_no", "=", che_no)
-                            .and("yuyue_progress", "<>", "已进店")
-                            .and("yuyue_progress", "<>", "已离店")
-                            .and("yuyue_progress", "<>", "已取消")
-                            .and("yuyue_jlrq", ">", date)
-							.desc("yuyue_jlrq"));
-			if (list.size() == 0) {
-                String num;
-                try {
-                    num = BsdUtils.createNewBill(dao, gongsiNo, caozuoyuan_xm, 2019, false);
-                } catch (Exception e) {
-                    return jsons.json(1, 1, 0, e.getMessage());
-                }
-                pz = dao.fetch(Work_yuyue_pzEntity.class, num);
-				if (che != null) {
-                    pz.setChe_no(che_no);
-                    pz.setChe_vin(che.getChe_vin());
-                    pz.setChe_fd(che.getChe_fd());
-                    pz.setChe_cx(che.getChe_cx());
-                    pz.setChe_wxys(che.getChe_wxys());
-                    pz.setChe_zjno(che.getChe_zjno());
-                    pz.setGcsj(che.getChe_gcrq());
-                    pz.setYuyue_lc(che.getChe_next_licheng());
-                    pz.setYuyue_scjcrq(new Date());
-                    pz.setYuyue_jlrq(new Date());
-                    pz.setWork_no("");
-                    pz.setYuyue_state(0);
-                    pz.setYuyue_progress("");
-                    KehuEntity kehu = dao.fetch(KehuEntity.class, che.getKehu_no());
-                    if (kehu != null) {
-                        pz.setKehu_no(kehu.getKehu_no());
-                        pz.setKehu_mc(kehu.getKehu_mc());
-                        pz.setKehu_xm(kehu.getKehu_xm());
-                        pz.setKehu_dz(kehu.getKehu_dz());
-                        pz.setKehu_sj(kehu.getKehu_sj());
-                        pz.setKehu_dh(kehu.getKehu_dh());
-                        if (kehu.getKehu_jb() != null && !"".equals(kehu.getKehu_jb())) {
-                            pz.setYuyue_jbr(kehu.getKehu_jb());
-                            Sql sql = Sqls.queryRecord("select dept_mc from gongzry where reny_xm='" + kehu.getKehu_jb() + "'");
-                            dao.execute(sql);
-                            List<Record> list1 = sql.getList(Record.class);
-                            if (list1.size() > 0) {
-                                pz.setDept_mc(list1.get(0).getString("dept_mc"));
-                            }
-                        }
-                    }
-				}
-                dao.update(pz, "^che_no|che_vin|che_fd|che_cx|che_wxys|che_zjno|yuyue_lc|yuyue_scjcrq|yuyue_jlrq|work_no|yuyue_state|yuyue_progress|kehu_no|kehu_mc|kehu_xm|kehu_dz|kehu_sj|kehu_dh|xche_jb|dept_mc$");
-            } else {
-                pz = list.get(0);
+		if (yuyue_no != null && !"".equals(yuyue_no)) {
+			Work_yuyue_pzEntity pz = dao.fetch(Work_yuyue_pzEntity.class, yuyue_no);
+            if (pz != null) {
                 pz.setGcsj(che.getChe_gcrq());
+                String json = Json.toJson(pz, JsonFormat.full());
+                return jsons.json(1, 1, 1, json);
             }
-		}
-        String json = Json.toJson(pz, JsonFormat.full());
-        return jsons.json(1, 1, 1, json);
+            return jsons.json(1, 1, 0, "此单已经不存在！");
+        }
+		return jsons.json(1, 1, 0, "单号不能为空！");
 	}
 
 	/**
@@ -623,4 +564,17 @@ public class yymodule {
 			return jsons.json(1, 5, 0, "进厂失败，订单不存在");
 		}
 	}
+
+    @At
+    @Ok("raw:json")
+	public String deleteWxxm(String yuyue_no, String wxxm_no) {
+        dao.execute(Sqls.create("delete from work_yuyue_wxxm where yuyue_no='" + yuyue_no + "' and wxxm_no='" + wxxm_no + "'"));
+        return jsons.json(1, 1, 1, "删除成功");
+    }
+
+    public String updateXmJe(String yuyue_no, String wxxm_no, String ygsf) {
+        dao.execute(Sqls.create("update work_yuyue_wxxm set wxxm_yje=" + ygsf + ",wxxm_je=" + ygsf + ",wxxm_dj=" + ygsf + "/(case wxxm_gs when 0 then 1 else wxxm_gs end) " +
+                "where yuyue_no='" + yuyue_no + "' and wxxm_no='" + wxxm_no + "'"));
+        return "success";
+    }
 }

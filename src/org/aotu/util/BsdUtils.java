@@ -1,6 +1,8 @@
 package org.aotu.util;
 
+import org.aotu.appointment.entity.Work_yuyue_pzEntity;
 import org.aotu.offer.entity.feilvEntity;
+import org.aotu.offer.entity.offerEntity;
 import org.aotu.order.entity.Work_pz_gzEntity;
 import org.nutz.dao.Cnd;
 import org.nutz.dao.ConnCallback;
@@ -123,6 +125,12 @@ public class BsdUtils {
                                 throw new RuntimeException(e.getMessage());
                             }
                             break;
+                        case 2021: //快速报价单
+                            supplyKSBJInfo(dao, billNo[0]);
+                            break;
+                        case 2019: //维修预约单
+                            supplyWXYYInfo(dao, billNo[0]);
+                            break;
                     }
                 } else {
                     throw new RuntimeException("新建单号或者插入工作表出错！");
@@ -130,6 +138,68 @@ public class BsdUtils {
             }
         });
         return billNo[0];
+    }
+
+    private static void supplyWXYYInfo(Dao dao, String number) {
+        String feilvName = "";
+        double feilv = 1;
+        List<feilvEntity> feilvList = dao.query(feilvEntity.class, Cnd.where("feil_sy", "=", 1));
+        if (feilvList.size() > 0) {
+            feilvName = feilvList.get(0).getFeil_mc();
+            feilv = feilvList.get(0).getFeil_fl();
+        } else {
+            List<feilvEntity> feiList1 = dao.query(feilvEntity.class, Cnd.where("feil_mc", "=", "一级标准"));
+            if (feiList1.size() > 0) {
+                feilvName = feiList1.get(0).getFeil_mc();
+                feilv = feiList1.get(0).getFeil_fl();
+            } else {
+                Sql sql = Sqls.queryRecord("select top 1 feil_mc, feil_fl from work_feilv_sm");
+                dao.execute(sql);
+                List<Record> list = sql.getList(Record.class);
+                if (list.size() > 0) {
+                    feilvName = list.get(0).getString("feil_mc");
+                    feilv = Double.parseDouble(list.get(0).getString("feil_fl"));
+                }
+            }
+        }
+        Work_yuyue_pzEntity pz = dao.fetch(Work_yuyue_pzEntity.class, Cnd.where("yuyue_no", "=", number));
+        pz.setYuyue_sfbz(feilvName);
+        pz.setYuyue_sffl(feilv);
+        int num = dao.update(pz, "^yuyue_sfbz|yuyue_sffl$");
+        if (num < 1) {
+            throw new RuntimeException("单据已经不存在！");
+        }
+    }
+
+    private static void supplyKSBJInfo(Dao dao, String number) {
+        String feilvName = "";
+        double feilv = 1;
+        List<feilvEntity> feilvList = dao.query(feilvEntity.class, Cnd.where("feil_sy", "=", 1));
+        if (feilvList.size() > 0) {
+            feilvName = feilvList.get(0).getFeil_mc();
+            feilv = feilvList.get(0).getFeil_fl();
+        } else {
+            List<feilvEntity> feiList1 = dao.query(feilvEntity.class, Cnd.where("feil_mc", "=", "一级标准"));
+            if (feiList1.size() > 0) {
+                feilvName = feiList1.get(0).getFeil_mc();
+                feilv = feiList1.get(0).getFeil_fl();
+            } else {
+                Sql sql = Sqls.queryRecord("select top 1 feil_mc, feil_fl from work_feilv_sm");
+                dao.execute(sql);
+                List<Record> list = sql.getList(Record.class);
+                if (list.size() > 0) {
+                    feilvName = list.get(0).getString("feil_mc");
+                    feilv = Double.parseDouble(list.get(0).getString("feil_fl"));
+                }
+            }
+        }
+        offerEntity pz = dao.fetch(offerEntity.class, Cnd.where("list_no", "=", number));
+        pz.setList_sfbz(feilvName);
+        pz.setList_sffl(feilv);
+        int num = dao.update(pz, "^List_sfbz|List_sffl$");
+        if (num < 1) {
+            throw new RuntimeException("单据已经不存在！");
+        }
     }
 
     /**

@@ -141,96 +141,39 @@ public class KuaixiuModule {
      */
     @At
     @Ok("raw:json")
-    public String mrkxJbxx(String che_no, String gongsiNo, String caozuoyuan_xm, String work_no) {
+    public String mrkxJbxx(String che_no, String gongsiNo, final String caozuoyuan_xm, final String work_no, final String old_work_no) {
         Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, che_no);
-        Work_pz_gzEntity pz;
         if (work_no != null && !"".equals(work_no)) {
-            pz = dao.fetch(Work_pz_gzEntity.class, work_no);
-            pz.setGcsj(che.getChe_gcrq());
-        } else {
-            if (gongsiNo == null || caozuoyuan_xm == null) {
-                return jsons.json(1, 1, 0, "公司编号或操作员不能为空");
-            }
-            java.util.Calendar rightNow = java.util.Calendar.getInstance();
-            java.text.SimpleDateFormat sim = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            // 如果是后退几天，就写 -天数 例如：
-            rightNow.add(java.util.Calendar.DAY_OF_MONTH, -20);
-            // 进行时间转换
-            String date = sim.format(rightNow.getTime());
-            // 查询这个车一段时间内的快修草稿单，按时间倒叙
-            List<Work_pz_gzEntity> result = dao.query(Work_pz_gzEntity.class,
-                    Cnd.where("che_no", "=", che_no)
-                            .and("xche_jdrq", ">", date)
-                            .and("flag_fast", "=", 1)
-                            .and("mainstate", "=", -1)
-                            .desc("xche_jdrq"));
-            // 如果没有，则新建单号
-            if (result.size() == 0) {
-//                String num = add(gongsiNo, caozuoyuan_xm);
-                String num;
+            Work_pz_gzEntity pz = dao.fetch(Work_pz_gzEntity.class, work_no);
+            if (pz != null) {
+                String usingCzy = pz.getUsing_Czy();
+                // 如果占用的操作员不为空，并且不和当前操作员一致，则不让打开
+                if (usingCzy != null && usingCzy.length() > 0) {
+                    return jsons.json(1, 1, 0, "此单据正在被占用，无法打开！");
+                }
                 try {
-                    num = BsdUtils.createNewBill(dao, gongsiNo, caozuoyuan_xm, 2007, true);
+                    Trans.exec(new Atom() {
+                        @Override
+                        public void run() {
+                            // 如果需要关闭的维修号存在，则先去除占用
+                            if (!old_work_no.equals("")) {
+                                dao.execute(Sqls.create("update work_pz_gz set using_czy='' where work_no='" + old_work_no + "'"));
+                            }
+                            // 并占用上新的单号
+                            dao.execute(Sqls.create("update work_pz_gz set using_czy='" + caozuoyuan_xm + "' where work_no='" + work_no + "'"));
+                        }
+                    });
                 } catch (Exception e) {
                     return jsons.json(1, 1, 0, e.getMessage());
                 }
-                pz = dao.fetch(Work_pz_gzEntity.class, num);
-                // 设置草稿单上车辆和客户的信息
-                if (che != null) {
-                    pz.setChe_no(che_no);
-                    pz.setChe_vin(che.getChe_vin());
-                    pz.setChe_fd(che.getChe_fd());
-                    pz.setChe_cx(che.getChe_cx());
-                    pz.setChe_wxys(che.getChe_wxys());
-                    pz.setChe_zjno(che.getChe_zjno());
-                    pz.setGcsj(che.getChe_gcrq());
-                    pz.setXche_lc(che.getChe_next_licheng());
-                    KehuEntity kehu = dao.fetch(KehuEntity.class, che.getKehu_no());
-                    if (kehu != null) {
-                        pz.setKehu_no(kehu.getKehu_no());
-                        pz.setKehu_mc(kehu.getKehu_mc());
-                        pz.setKehu_xm(kehu.getKehu_xm());
-                        pz.setKehu_dz(kehu.getKehu_dz());
-                        pz.setKehu_sj(kehu.getKehu_sj());
-                        pz.setKehu_dh(kehu.getKehu_dh());
-                        if (kehu.getKehu_jb() != null && !"".equals(kehu.getKehu_jb())) {
-                            pz.setXche_jb(kehu.getKehu_jb());
-                            Sql sql = Sqls.queryRecord("select dept_mc from gongzry where reny_xm='" + kehu.getKehu_jb() + "'");
-                            dao.execute(sql);
-                            List<Record> list = sql.getList(Record.class);
-                            if (list.size() > 0) {
-                                pz.setDept_mc(list.get(0).getString("dept_mc"));
-                            }
-                        }
-                    }
-                }
-                pz.setMainstate(-1);
-                pz.setUsing_Czy(caozuoyuan_xm); // 新建单据，把操作员使用占上
-                dao.update(pz, "^che_no|che_vin|che_fd|che_cx|che_wxys|che_zjno|gcsj|xche_lc|kehu_no|kehu_mc|kehu_xm|kehu_dz|kehu_sj|kehu_dh|xche_jb|dept_mc|mainstate|Using_Czy$");
-            } else {
-                pz = result.get(0);
                 pz.setUsing_Czy(caozuoyuan_xm);
-                dao.update(pz, "Using_Czy");
                 pz.setGcsj(che.getChe_gcrq());
+                String json = Json.toJson(pz, JsonFormat.full());
+                return jsons.json(1, 1, 1, json);
             }
-            // 查询仓库，准备获取名字
-            Sql sql1 = Sqls
-                    .queryRecord("select * from sm_cangk where isnull(cangk_hide,0) = 0 ");
-            dao.execute(sql1);
-            List<Record> res = sql1.getList(Record.class);
-            for (Record record : res) {
-                if (pz.getCangk_dm() != null && !pz.getCangk_dm().equals("")) {
-                    // 如果草稿单中的仓库代码和仓库中的代码相同，则把仓库名称赋给草稿单中的内容
-                    if (record.getString("cangk_dm").equals(pz.getCangk_dm())) {
-                        pz.setCangk_mc(record.getString("cangk_mc"));
-                        break;
-                    }
-                } else {
-                    break;
-                }
-            }
+            return jsons.json(1, 1, 0, "此单已经不存在！");
         }
-        String json = Json.toJson(pz, JsonFormat.full());
-        return jsons.json(1, 1, 1, json);
+        return jsons.json(1, 1, 0, "单号不能为空！");
     }
 
 

@@ -120,68 +120,16 @@ public class offerModule {
 	@Ok("raw:json")
 	public String xinxi(String pai, String gongsiNo, String caozuoyuan_xm, String list_no) {
 		Work_cheliang_smEntity che = dao.fetch(Work_cheliang_smEntity.class, pai);
-        offerEntity offer = new offerEntity();
-        if (!"".equals(list_no)) {
-            offer = dao.fetch(offerEntity.class, list_no);
-            offer.setChe_gcrq(che.getChe_gcrq());
-        } else {
-            List<offerEntity> list;
-            java.util.Calendar rightNow = java.util.Calendar.getInstance();
-            java.text.SimpleDateFormat sim = new java.text.SimpleDateFormat(
-                    "yyyy-MM-dd HH:mm:ss");
-            // 如果是后退几天，就写 -天数 例如：
-            rightNow.add(java.util.Calendar.DAY_OF_MONTH, -20);
-            // 进行时间转换
-            String date = sim.format(rightNow.getTime());
-            list = dao.query(offerEntity.class, Cnd.where("che_no", "=", pai)
-                    .and("List_progress", "<>", "已进店").and("List_progress", "<>", "已离店").and("List_progress", "<>", "已取消").and("list_jlrq", ">", date).desc("list_jlrq"));
-            if (list.size() == 0) {
-                String num = add(gongsiNo, caozuoyuan_xm);
-                if (num != null) {
-                    offer.setList_no(num);
-                    offer.setChe_no(pai);
-                    offer.setList_jlrq(new Date());
-                    // 查询建表需要的内容
-                    List<feilvEntity> fei = dao.query(feilvEntity.class,
-                            Cnd.where("feil_sy", "=", true));
-                    if (fei.size() < 0) {
-                        fei = dao.query(feilvEntity.class, Cnd.where("feil_mc", "=", "一级标准"));
-                    }
-                    String mc = fei.get(0).getFeil_mc();
-                    double fl = fei.get(0).getFeil_fl();
-                    offer.setList_sfbz(mc);
-                    offer.setList_sffl(fl);
-                    if (che != null) {
-                        offer.setChe_cx(che.getChe_cx());
-                        offer.setChe_vin(che.getChe_vin());
-                        offer.setChe_gcrq(che.getChe_gcrq());
-                        offer.setList_lc(che.getChe_next_licheng());
-                        offer.setChe_fd(che.getChe_fd());
-                        offer.setChe_fd_xh(che.getChe_fd_xh());
-                        offer.setChe_dp_xh(che.getChe_dp_xh());
-                        offer.setChe_pp(che.getChe_pp());
-                        offer.setChe_wxys(che.getChe_wxys());
-                        offer.setChe_zjno(che.getChe_zjno());
-                        KehuEntity kehu = dao.fetch(KehuEntity.class, che.getKehu_no());
-                        if (kehu != null) {
-                            offer.setKehu_mc(kehu.getKehu_mc());
-                            offer.setKehu_dh(kehu.getKehu_dh());
-                            offer.setKehu_no(kehu.getKehu_no());
-                            offer.setKehu_xm(kehu.getKehu_xm());
-                            offer.setKehu_dz(kehu.getKehu_dz());
-                            offer.setKehu_yb(kehu.getKehu_yb());
-                            offer.setKehu_sj(kehu.getKehu_sj());
-                        }
-                    }
-                    dao.updateIgnoreNull(offer);
-                }
-            } else {
-                offer = list.get(0);
-                offer.setChe_gcrq(che.getChe_gcrq());
-            }
-        }
-		String json = Json.toJson(offer, JsonFormat.full());
-		return jsons.json(1, 1, 1, json);
+        if (list_no != null && !"".equals(list_no)) {
+            offerEntity offer = dao.fetch(offerEntity.class, list_no);
+			if (offer != null) {
+				offer.setGcsj(che.getChe_gcrq());
+				String json = Json.toJson(offer, JsonFormat.full());
+				return jsons.json(1, 1, 1, json);
+			}
+			return jsons.json(1, 1, 0, "此单已经不存在！");
+		}
+        return jsons.json(1, 1, 0, "单号不能为空！");
 	}
 
 	/**

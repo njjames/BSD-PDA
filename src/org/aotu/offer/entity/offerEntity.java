@@ -98,7 +98,7 @@ public class offerEntity {
     @Column
     private double List_lc;
 
-    private Date che_gcrq;
+    private Date gcsj;
 
     public Integer getReco_no() {
         return reco_no;
@@ -428,13 +428,12 @@ public class offerEntity {
         return List_lc;
     }
 
-    public Date getChe_gcrq() {
-        return che_gcrq;
+    public Date getGcsj() {
+        return gcsj;
     }
 
-    public void setChe_gcrq(Date che_gcrq) {
-        this.che_gcrq = che_gcrq;
+    public void setGcsj(Date gcsj) {
+        this.gcsj = gcsj;
     }
-
 }
 
