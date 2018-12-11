@@ -5,10 +5,12 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.sun.scenario.effect.impl.prism.ps.PPSZeroSamplerPeer;
 import org.aotu.Jsons;
 import org.aotu.offsetPager;
 import org.aotu.appointment.entity.Work_yuyue_llEntity;
@@ -33,6 +35,7 @@ import org.nutz.dao.entity.Record;
 import org.nutz.dao.pager.Pager;
 import org.nutz.dao.sql.Sql;
 import org.nutz.dao.sql.SqlCallback;
+import org.nutz.dao.util.Daos;
 import org.nutz.ioc.loader.annotation.Inject;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.json.Json;
@@ -44,6 +47,8 @@ import org.nutz.mvc.annotation.Param;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.nutz.trans.Atom;
+import org.nutz.trans.Trans;
 
 @IocBean
 @At("/yuyue")
@@ -263,23 +268,52 @@ public class yymodule {
 	 */
 	@At
 	@Ok("raw:json")
-	public String addjb(@Param("..") Work_yuyue_pzEntity yuyue) {
-
-		System.out.println("=====================里程=============================="+yuyue.getYuyue_yjjclc());
-		Work_cheliang_smEntity che = pu.saveCheInfo(yuyue.getChe_no(), yuyue.getGcsj(), yuyue.getChe_cx(), yuyue.getChe_vin(),yuyue.getGongSiNo());
-		pu.saveKeHu(che.getKehu_no(), yuyue.getKehu_mc(), yuyue.getKehu_dh());
-		
-		yuyue.setYuyue_scjcrq(new Date());
-		
-		Work_yuyue_pzEntity yuyue_pz = dao.fetch(Work_yuyue_pzEntity.class,
-				Cnd.where("yuyue_no", "=", yuyue.getYuyue_no()));
-		yuyue.setReco_no(yuyue_pz.getReco_no());
-		yuyue.setYuyue_state(1);
-		yuyue.setYuyue_progress("未进店");
-		
-		dao.update(yuyue,"^che_cx|yuyue_progress|yuyue_state|che_vin|yuyue_yjjcrq|yuyue_yjjclc|yuyue_yjjclc|kehu_mc|kehu_dh|yuyue_sfbz|yuyue_sffl|kehu_no|yuyue_scjcrq$");
-
-		return yuyue.getYuyue_no();
+	public String addjb(@Param("..") final Work_yuyue_pzEntity yuyue, final boolean justsave) {
+        try {
+            Trans.exec(new Atom() {
+                @Override
+                public void run() {
+                    String yuyue_gj_wx = "0";
+                    String yuyue_gj_ll = "0";
+                    Sql sql = Sqls.queryRecord("select isnull(sum(wxxm_je),0) as je from work_yuyue_wxxm where yuyue_no='" + yuyue.getYuyue_no() + "'");
+                    dao.execute(sql);
+                    List<Record> list = sql.getList(Record.class);
+                    if (list.size() > 0) {
+                        yuyue_gj_wx = list.get(0).getString("je");
+                    }
+                    Sql sql2 = Sqls.queryRecord("select isnull(sum(peij_je),0) as je from work_yuyue_ll where yuyue_no='" + yuyue.getYuyue_no() + "'");
+                    dao.execute(sql2);
+                    List<Record> list2 = sql2.getList(Record.class);
+                    if (list2.size() > 0) {
+                        yuyue_gj_ll = list2.get(0).getString("je");
+                    }
+                    Work_yuyue_pzEntity pzEntity = dao.fetch(Work_yuyue_pzEntity.class, yuyue.getYuyue_no());
+                    pzEntity.setChe_vin(yuyue.getChe_vin());
+                    pzEntity.setChe_cx(yuyue.getChe_cx());
+                    pzEntity.setKehu_mc(yuyue.getKehu_mc());
+                    pzEntity.setKehu_dh(yuyue.getKehu_dh());
+                    pzEntity.setYuyue_sfbz(yuyue.getYuyue_sfbz());
+                    pzEntity.setYuyue_sffl(yuyue.getYuyue_sffl());
+                    pzEntity.setYuyue_bz(yuyue.getYuyue_bz());
+                    pzEntity.setYuyue_jbr(yuyue.getYuyue_jbr());
+                    pzEntity.setYuyue_yjjclc(yuyue.getYuyue_yjjclc());
+                    pzEntity.setYuyue_scjcrq(new Date());
+                    pzEntity.setYuyue_gj_wx(new BigDecimal(yuyue_gj_wx).doubleValue());
+                    pzEntity.setYuyue_gj_ll(new BigDecimal(yuyue_gj_ll).doubleValue());
+                    pzEntity.setYuyue_hjje(new BigDecimal(yuyue_gj_wx).add(new BigDecimal(yuyue_gj_ll)).doubleValue());
+                    if (!justsave) {
+                        pzEntity.setYuyue_state(1);
+                        pzEntity.setYuyue_progress("未进店");
+                    }
+                    dao.update(yuyue,"^che_cx|che_vin|yuyue_yjjclc|kehu_mc|kehu_dh|yuyue_sfbz|yuyue_sffl|yuyue_scjcrq|yuyue_bz|yuyue_jbr|yuyue_state|yuyue_progress$");
+                    pu.saveCheInfo(yuyue.getChe_no(), yuyue.getGcsj(), yuyue.getChe_cx(), yuyue.getChe_vin(),yuyue.getGongSiNo());
+                    pu.saveKeHu(yuyue.getKehu_no(), yuyue.getKehu_mc(), yuyue.getKehu_dh());
+                }
+            });
+        } catch (Exception e) {
+            return jsons.json(1, 1, 0, "保存单据失败！");
+        }
+        return jsons.json(1, 1, 1, "保存成功");
 	}
 
 	/**
@@ -342,7 +376,7 @@ public class yymodule {
 	public String addcail(String addLists) {
 		JsonParser parse = new JsonParser(); // 创建json解析器
 		try {
-            String yuyueNo = "";
+            String yuyueNo;
             JsonArray array = (JsonArray) parse.parse(addLists);
 			for (int i = 0; i < array.size(); i++) {
 				Work_yuyue_llEntity yuyueLlEntity = new Work_yuyue_llEntity();
@@ -370,9 +404,7 @@ public class yymodule {
                                 .create("update work_yuyue_ll set peij_sl = peij_sl + " + item.get("peij_sl").getAsDouble() + ",peij_je = peij_je + " + item.get("peij_je").getAsDouble() + " where yuyue_no='" + yuyueNo + "' and peij_no ='" + peijNo + "'");
                         dao.execute(sqlUpdate);
                     } else {
-                        Sql sqlDelete = Sqls
-                                .create("delete from work_yuyue_ll where yuyue_no='" + yuyueNo + "' and peij_no ='" + peijNo + "'");
-                        dao.execute(sqlDelete);
+                        dao.execute(Sqls.create("delete from work_yuyue_ll where yuyue_no='" + yuyueNo + "' and peij_no='" + peijNo + "'"));
                     }
                 }
 			}
@@ -382,186 +414,162 @@ public class yymodule {
 		}
         return "success";
 	}
-
-	
-	
 	
 	/**
-	 * @param no
+	 * @param yuyue_no
 	 * @param gongsiNo
 	 * @param caozuoyuan_xm
 	 * @return
 	 */
 	@At
 	@Ok("raw:json")
-	public String yuyyejinchang(String no, String gongsiNo, String caozuoyuan_xm) {
-		Work_yuyue_pzEntity yuyue = dao.fetch(Work_yuyue_pzEntity.class, no);
+	public String yuyyejinchang(final String yuyue_no, final String gongsiNo, final String caozuoyuan_xm) {
+		final Work_yuyue_pzEntity yuyue = dao.fetch(Work_yuyue_pzEntity.class, yuyue_no);
 		if (yuyue != null) {
-			// 新建一个接待登记单号
-			String num = ordersModule.add(gongsiNo, caozuoyuan_xm);
-			yuyue.setYuyue_state(1);
-			yuyue.setYuyue_progress("未进店");
-			yuyue.setYuyue_IsImpt(1);
-			yuyue.setWork_no(num);
-			dao.update(yuyue);
-			
-			Work_pz_gzEntity pz_new = dao.fetch(Work_pz_gzEntity.class, num);
-			pz_new.setWork_no(num);
-			pz_new.setKehu_no(yuyue.getKehu_no());
-			pz_new.setXche_jdrq(new Date());
-			
-			pz_new.setYuyue_no(yuyue.getYuyue_no());
-			pz_new.setKehu_mc(yuyue.getKehu_mc());
-			pz_new.setKehu_xm(yuyue.getKehu_xm());
-			pz_new.setKehu_dz(yuyue.getKehu_dz());
-			pz_new.setKehu_dh(yuyue.getKehu_dh());
-			pz_new.setKehu_sj(yuyue.getKehu_sj());
-			pz_new.setChe_zjno(yuyue.getChe_zjno());
-			pz_new.setKehu_yb(yuyue.getKehu_yb());
-			pz_new.setChe_no(yuyue.getChe_no());
-			pz_new.setChe_vin(yuyue.getChe_vin());
-			pz_new.setChe_fd(yuyue.getChe_fd());
-			pz_new.setChe_cx(yuyue.getChe_cx());
-			pz_new.setChe_wxys(yuyue.getChe_wxys());
-			
-			pz_new.setXche_gdfl(yuyue.getYuyue_gdfl());
-			pz_new.setXche_wxfl(yuyue.getYuyue_wxfl());
-			pz_new.setXche_sfbz(yuyue.getYuyue_sfbz());
-			pz_new.setXche_gj(yuyue.getYuyue_hjje());
-			pz_new.setXche_jcr(yuyue.getYuyue_jcr());
-			pz_new.setXche_lc(yuyue.getYuyue_yjjclc());
-			pz_new.setFlag_IsCheck(false);
-			pz_new.setFlag_isxiche(false);
-			pz_new.setFlag_pad(true);
-			pz_new.setXche_ywlx("预约转维修");	
-			pz_new.setFlag_fast(false);
-			int nu = dao.updateIgnoreNull(pz_new);
-
-
-			// 更新详情表
-			Sql sql_ = Sqls
-					.create("select yuyue_no,a.peij_no,a.peij_mc,a.peij_dw,a.peij_jk,a.peij_th,a.peij_cx,a.peij_pp,a.peij_cd,a.peij_bz,peij_sl,peij_dj,peij_je,Peij_zt,b.peij_tcfs ,b.peij_tc   from work_yuyue_ll a ,kucshp_info b  where a.yuyue_no = '"
-							+ no + "'and a.peij_no=b.peij_no");
-			sql_.setCallback(new SqlCallback() {
-				public Object invoke(Connection conn, java.sql.ResultSet rs,
-						Sql sql) throws SQLException {
-					List<Work_ll_gzEntity> list = new LinkedList<Work_ll_gzEntity>();
-					while (rs.next()) {
-						Work_ll_gzEntity ll = new Work_ll_gzEntity();
-						// ll.setwork_no(num);
-						ll.setPeij_no(rs.getString("Peij_no"));
-						ll.setPeij_mc(rs.getString("peij_mc"));
-						ll.setPeij_dw(rs.getString("peij_dw"));
-						ll.setPeij_jk(rs.getString("peij_jk"));
-						ll.setPeij_th(rs.getString("peij_th"));
-						ll.setPeij_cx(rs.getString("peij_cx"));
-						ll.setPeij_pp(rs.getString("peij_pp"));
-						ll.setPeij_cd(rs.getString("peij_cd"));
-						ll.setPeij_bz(rs.getString("peij_bz"));
-						ll.setPeij_sl(rs.getDouble("peij_sl"));
-						ll.setPeij_dj(rs.getDouble("peij_dj"));
-						ll.setPeij_je(rs.getDouble("peij_je"));
-						ll.setPeij_zt(rs.getString("peij_zt"));
-						ll.setPeij_tcfs(rs.getInt("peij_tcfs"));
-						ll.setPeij_tc(rs.getDouble("peij_tc"));
-						ll.setPeij_yje(rs.getDouble("peij_je"));
-						list.add(ll);
-					}
-					return list;
-				}
-			});
-			dao.execute(sql_);
-			List<Work_ll_gzEntity> list = sql_.getList(Work_ll_gzEntity.class);
-			for (Work_ll_gzEntity llgz : list) {
-				llgz.setWork_no(num);
-				dao.insert(llgz);
-			}
-			// 结束
-			// 更新详细表
-			Sql sql_2 = Sqls
-					.create("select a.wxxm_no,a.wxxm_mc,a.wxxm_gs,a.wxxm_dj,a.wxxm_je,a.wxxm_khgs,wxxm_zt,a.wxxm_bz,'正常',b.wxxm_tcfs,b.wxxm_tc from work_yuyue_wxxm a ,work_weixiu_sm b where a.yuyue_no = '"
-							+ no + "' and a.wxxm_no= b.wxxm_no ");
-			sql_2.setCallback(new SqlCallback() {
-				public Object invoke(Connection conn, java.sql.ResultSet rs,
-						Sql sql) throws SQLException {
-					List<Work_mx_gzEntity> list_gz = new LinkedList<Work_mx_gzEntity>();
-					while (rs.next()) {
-						Work_mx_gzEntity mxgz = new Work_mx_gzEntity();
-						mxgz.setWxxm_no(rs.getString("wxxm_no"));
-						mxgz.setWxxm_mc(rs.getString("wxxm_mc"));
-						mxgz.setWxxm_gs(rs.getDouble("wxxm_gs"));
-						mxgz.setWxxm_dj(rs.getDouble("wxxm_dj"));
-						mxgz.setWxxm_je(rs.getDouble("wxxm_je"));
-						mxgz.setWxxm_khgs(rs.getDouble("wxxm_khgs"));
-						mxgz.setWxxm_zt(rs.getString("wxxm_zt"));
-						mxgz.setWxxm_bz(rs.getString("wxxm_bz"));
-						mxgz.setWxxm_tpye("正常");
-						mxgz.setWxxm_tcfs(rs.getInt("wxxm_tcfs"));
-						mxgz.setWxxm_tc(rs.getDouble("wxxm_tc"));
-						mxgz.setWxxm_yje(rs.getDouble("wxxm_je"));
-						mxgz.setWxxm_Print(true);
-						list_gz.add(mxgz);
-					}
-					return list_gz;
-				}
-			});
-			dao.execute(sql_2);
-			List<Work_mx_gzEntity> list_mx = sql_2
-					.getList(Work_mx_gzEntity.class);
-			for (Work_mx_gzEntity llgz : list_mx) {
-				llgz.setWork_no(num);
-				dao.insert(llgz);
-			}
-			// 结束
-
-			Sql sql1 = Sqls
-					.create("update work_pz_gz set mainstate=0,substate='未派车辆',xche_wxjd='在修',xche_jdrq=getdate() where work_no= '"
-							+ num + "'");
-			dao.execute(sql1);
-
-			Sql sql2 = Sqls
-					.create("update work_pz_gz set xche_wxsj = isnull(DATEDIFF(minute, xche_jdrq, xche_yjwgrq),0) where work_no= '"
-							+ num + "'");
-			dao.execute(sql2);
-
-			Sql sql3 = Sqls
-					.create("update work_mx_gz set wxxm_jd='未派工' where work_no= '"
-							+ num + "'");
-			dao.execute(sql3);
-
-			Work_pz_gzEntity pz_ = dao.fetch(Work_pz_gzEntity.class, num);
-
-			Sql sql4 = Sqls
-					.create("update work_yuyue_pz set yuyue_state=1,  yuyue_progress='已进店',yuyue_sjjcrq=getdate() where yuyue_no= '"
-							+ pz_.getYuyue_no() + "'");
-			dao.execute(sql4);
-
-			Sql sql5 = Sqls
-					.create("update work_baojia_pz set list_progress='已进店' where list_no=  '"
-							+ pz_.getYuyue_no() + "'");
-			dao.execute(sql5);
-
-//			Sql sql6 = Sqls
-//					.create("update work_cheliang_sm set che_rjlc = (xche_lc-xche_last_lc)/ case isnull(convert(numeric(18,2), xche_jdrq - xche_last_jdrq),0) when 0 then 1 else isnull(convert(numeric(18,2), xche_jdrq - xche_last_jdrq),0) end from work_cheliang_sm a,work_pz_gz b where a.che_no = b.che_no and a.che_no = '"
-//							+ pz_.getChe_no() + "' and work_no='" + num + "'");
-//			dao.execute(sql6);
-			////////////////////合计金额计算///////////////////////////////////
-			Sql sql1_1 = Sqls
-					.create("update b set b.xche_rgf = a.xche_rgf,b.xche_rgbh=a.xche_rgf,b.xche_rgsl=0,xche_rgse=0 from work_pz_gz b,(select work_no,sum(wxxm_je) xche_rgf from work_mx_gz where work_no='"+num+"' and wxxm_zt in ('正常','保险') group by work_no) a   where b.work_no = '"+num+"' and a.work_no = b.work_no");
-			dao.execute(sql1_1);			
-			Sql sql1_2 = Sqls
-					.create("update b set b.xche_clf = a.xche_clf,b.xche_clbh=a.xche_clf,b.xche_clsl=0,xche_clse=0 from work_pz_gz b,(select work_no,sum(peij_je) xche_clf from work_ll_gz where work_no='"+num+"' and peij_zt in ('正常','保险')group by work_no ) a   where b.work_no = '"+num+"' and a.work_no = b.work_no");
-			dao.execute(sql1_2);
-			Sql sql1_3 = Sqls
-					.create("update work_pz_gz set xche_yhje = isnull(xche_wxxm_yhje,0)+isnull(xche_peij_yhje,0) where work_no = '"+num+"'");
-			dao.execute(sql1_3);
-			Sql sql1_4 = Sqls
-					.create("update work_pz_gz set xche_hjje= isnull(xche_rgf,0) + isnull(xche_clf,0) where work_no = '"+num+"'");
-			dao.execute(sql1_4);
-			///////////////////////////////////////////////////////////////
-			return jsons.json(1, 5, 1, "进厂成功");
+            final Work_pz_gzEntity[] pz_new = new Work_pz_gzEntity[1];
+            try {
+                Trans.exec(new Atom() {
+                    @Override
+                    public void run() {
+                        // 新建一个接待登记单号
+                        String num = BsdUtils.createNewBill(dao, gongsiNo, caozuoyuan_xm, 2007, false);
+                        pz_new[0] = dao.fetch(Work_pz_gzEntity.class, num);
+                        pz_new[0].setYuyue_no(yuyue.getYuyue_no());
+                        pz_new[0].setKehu_no(yuyue.getKehu_no());
+                        pz_new[0].setKehu_mc(yuyue.getKehu_mc());
+                        pz_new[0].setKehu_xm(yuyue.getKehu_xm());
+                        pz_new[0].setKehu_dz(yuyue.getKehu_dz());
+                        pz_new[0].setKehu_dh(yuyue.getKehu_dh());
+                        pz_new[0].setKehu_sj(yuyue.getKehu_sj());
+                        pz_new[0].setChe_zjno(yuyue.getChe_zjno());
+                        pz_new[0].setKehu_yb(yuyue.getKehu_yb());
+                        pz_new[0].setChe_no(yuyue.getChe_no());
+                        pz_new[0].setChe_vin(yuyue.getChe_vin());
+                        pz_new[0].setChe_fd(yuyue.getChe_fd());
+                        pz_new[0].setChe_cx(yuyue.getChe_cx());
+                        pz_new[0].setChe_wxys(yuyue.getChe_wxys());
+                        pz_new[0].setXche_gdfl(yuyue.getYuyue_gdfl());
+                        pz_new[0].setXche_wxfl(yuyue.getYuyue_wxfl());
+                        pz_new[0].setXche_sfbz(yuyue.getYuyue_sfbz());
+                        pz_new[0].setXche_gj(yuyue.getYuyue_hjje());
+                        pz_new[0].setXche_jcr(yuyue.getYuyue_jcr());
+                        pz_new[0].setXche_zxr(yuyue.getYuyue_ry());
+                        pz_new[0].setXche_lc(yuyue.getYuyue_yjjclc());
+                        pz_new[0].setFlag_IsCheck(false);
+                        pz_new[0].setFlag_isxiche(false);
+                        pz_new[0].setFlag_pad(true);
+                        pz_new[0].setXche_ywlx("预约转维修");
+                        Sql sql = Sqls.queryRecord("select kehu_bxno,kehu_bxmc from work_cheliang_sm where che_no='" + yuyue.getChe_no() + "'");
+                        dao.execute(sql);
+                        List<Record> list1 = sql.getList(Record.class);
+                        if (list1.size() > 0) {
+                            pz_new[0].setKehu_bxno(list1.get(0).getString("kehu_bxno"));
+                            pz_new[0].setKehu_bxmc(list1.get(0).getString("kehu_bxmc"));
+                        }
+                        if (yuyue.getYuyue_wxsj() != 0) {
+                            int day = yuyue.getYuyue_wxsj() / (24 * 60);
+                            Calendar calendar = Calendar.getInstance();
+                            calendar.setTime(pz_new[0].getXche_jdrq());
+                            calendar.add(Calendar.DATE, day);
+                            pz_new[0].setXche_yjwgrq(calendar.getTime());
+                        }
+                        // 进厂的状态
+                        pz_new[0].setMainstate(0);
+                        pz_new[0].setSubstate("未派车辆");
+                        pz_new[0].setXche_wxjd("在修");
+                        pz_new[0].setXche_jdrq(new Date());
+                        dao.update(pz_new[0], "^kehu_no|xche_jdrq|yuyue_no|kehu_mc|kehu_xm|kehu_dz|kehu_dh|kehu_sj|che_zjno|kehu_yb|che_no|che_vin|che_fd|che_cx|" +
+                                "che_wxys|xche_gdfl|xche_wxfl|xche_sfbz|xche_gj|xche_jcr|xche_lc|flag_IsCheck|flag_isxiche|flag_pad|xche_ywlx|kehu_bxno|kehu_bxmc|xche_yjwgrq|" +
+                                "mainstate|substate|xche_wxjd|xche_jdrq$");
+                        yuyue.setYuyue_state(1);
+                        yuyue.setYuyue_progress("已进店");
+                        yuyue.setYuyue_IsImpt(1);
+                        yuyue.setWork_no(num);
+                        yuyue.setYuyue_sjjcrq(new Date());
+                        dao.update(yuyue, "^yuyue_state|yuyue_progress|yuyue_IsImpt|work_no|yuyue_sjjcrq$");
+                        // 更新详情表
+                        Sql sql_ = Sqls.create("select yuyue_no,a.peij_no,a.peij_mc,a.peij_dw,a.peij_jk,a.peij_th,a.peij_cx,a.peij_pp,a.peij_cd,a.peij_bz,peij_sl,peij_dj,peij_je,Peij_zt,b.peij_tcfs ,b.peij_tc   from work_yuyue_ll a ,kucshp_info b  where a.yuyue_no = '"
+                                + yuyue_no + "'and a.peij_no=b.peij_no");
+                        sql_.setCallback(new SqlCallback() {
+                            public Object invoke(Connection conn, java.sql.ResultSet rs, Sql sql) throws SQLException {
+                                List<Work_ll_gzEntity> list = new LinkedList<Work_ll_gzEntity>();
+                                while (rs.next()) {
+                                    Work_ll_gzEntity ll = new Work_ll_gzEntity();
+                                    ll.setPeij_no(rs.getString("Peij_no"));
+                                    ll.setPeij_mc(rs.getString("peij_mc"));
+                                    ll.setPeij_dw(rs.getString("peij_dw"));
+                                    ll.setPeij_jk(rs.getString("peij_jk"));
+                                    ll.setPeij_th(rs.getString("peij_th"));
+                                    ll.setPeij_cx(rs.getString("peij_cx"));
+                                    ll.setPeij_pp(rs.getString("peij_pp"));
+                                    ll.setPeij_cd(rs.getString("peij_cd"));
+                                    ll.setPeij_bz(rs.getString("peij_bz"));
+                                    ll.setPeij_sl(rs.getDouble("peij_sl"));
+                                    ll.setPeij_dj(rs.getDouble("peij_dj"));
+                                    ll.setPeij_je(rs.getDouble("peij_je"));
+                                    ll.setPeij_zt(rs.getString("peij_zt"));
+                                    ll.setPeij_tcfs(rs.getInt("peij_tcfs"));
+                                    ll.setPeij_tc(rs.getDouble("peij_tc"));
+                                    ll.setPeij_yje(rs.getDouble("peij_je"));
+                                    list.add(ll);
+                                }
+                                return list;
+                            }
+                        });
+                        dao.execute(sql_);
+                        List<Work_ll_gzEntity> list = sql_.getList(Work_ll_gzEntity.class);
+                        for (Work_ll_gzEntity llgz : list) {
+                            llgz.setWork_no(num);
+                            dao.insert(llgz);
+                        }
+                        // 更新详细表
+                        Sql sql_2 = Sqls.create("select a.wxxm_no,a.wxxm_mc,a.wxxm_gs,a.wxxm_dj,a.wxxm_je,a.wxxm_khgs,wxxm_zt,a.wxxm_bz,'正常',b.wxxm_tcfs,b.wxxm_tc from work_yuyue_wxxm a ,work_weixiu_sm b where a.yuyue_no = '"
+                                + yuyue_no + "' and a.wxxm_no= b.wxxm_no ");
+                        sql_2.setCallback(new SqlCallback() {
+                            public Object invoke(Connection conn, java.sql.ResultSet rs, Sql sql) throws SQLException {
+                                List<Work_mx_gzEntity> list_gz = new LinkedList<Work_mx_gzEntity>();
+                                while (rs.next()) {
+                                    Work_mx_gzEntity mxgz = new Work_mx_gzEntity();
+                                    mxgz.setWxxm_no(rs.getString("wxxm_no"));
+                                    mxgz.setWxxm_mc(rs.getString("wxxm_mc"));
+                                    mxgz.setWxxm_gs(rs.getDouble("wxxm_gs"));
+                                    mxgz.setWxxm_dj(rs.getDouble("wxxm_dj"));
+                                    mxgz.setWxxm_je(rs.getDouble("wxxm_je"));
+                                    mxgz.setWxxm_khgs(rs.getDouble("wxxm_khgs"));
+                                    mxgz.setWxxm_zt(rs.getString("wxxm_zt"));
+                                    mxgz.setWxxm_bz(rs.getString("wxxm_bz"));
+                                    mxgz.setWxxm_tpye("正常");
+                                    mxgz.setWxxm_tcfs(rs.getInt("wxxm_tcfs"));
+                                    mxgz.setWxxm_tc(rs.getDouble("wxxm_tc"));
+                                    mxgz.setWxxm_yje(rs.getDouble("wxxm_je"));
+                                    mxgz.setWxxm_Print(true);
+                                    list_gz.add(mxgz);
+                                }
+                                return list_gz;
+                            }
+                        });
+                        dao.execute(sql_2);
+                        List<Work_mx_gzEntity> list_mx = sql_2.getList(Work_mx_gzEntity.class);
+                        for (Work_mx_gzEntity llgz : list_mx) {
+                            llgz.setWork_no(num);
+                            dao.insert(llgz);
+                        }
+                        dao.execute(Sqls.create("update work_pz_gz set xche_wxsj = isnull(DATEDIFF(minute, xche_jdrq, xche_yjwgrq),0) where work_no='" + num + "'"));
+                        dao.execute(Sqls.create("update work_mx_gz set wxxm_jd='未派工' where work_no='" + num + "'"));
+                        dao.execute(Sqls.create("update work_baojia_pz set list_progress='已进店' where list_no='" + yuyue_no + "'"));
+                        dao.execute(Sqls.create("update work_cheliang_sm " +
+                                "set che_rjlc = (xche_lc-xche_last_lc)/ case isnull(convert(numeric(18,2), xche_jdrq - xche_last_jdrq),0) when 0 then 1 else isnull(convert(numeric(18,2), xche_jdrq - xche_last_jdrq),0) end " +
+                                "from work_cheliang_sm a,work_pz_gz b where a.che_no = b.che_no and a.che_no='" + yuyue.getChe_no() + "' and work_no='" + num + "'"));
+                        BsdUtils.updateWorkPzGz(dao, num);
+                    }
+                });
+            } catch (Exception e) {
+                return jsons.json(1, 1, 0, e.getMessage());
+            }
+            String json = Json.toJson(pz_new[0], JsonFormat.full());
+            return jsons.json(1, 1, 1, json);
 		} else {
-			return jsons.json(1, 5, 0, "进厂失败，订单不存在");
+			return jsons.json(1, 1, 0, "进厂失败，订单不存在");
 		}
 	}
 
@@ -572,9 +580,34 @@ public class yymodule {
         return jsons.json(1, 1, 1, "删除成功");
     }
 
+    @At
+    @Ok("raw:json")
     public String updateXmJe(String yuyue_no, String wxxm_no, String ygsf) {
         dao.execute(Sqls.create("update work_yuyue_wxxm set wxxm_yje=" + ygsf + ",wxxm_je=" + ygsf + ",wxxm_dj=" + ygsf + "/(case wxxm_gs when 0 then 1 else wxxm_gs end) " +
                 "where yuyue_no='" + yuyue_no + "' and wxxm_no='" + wxxm_no + "'"));
+        return "success";
+    }
+
+    @At
+    @Ok("raw:json")
+    public String deleteWxcl(String yuyue_no, String peij_no) {
+        dao.execute(Sqls.create("delete from work_yuyue_ll where yuyue_no='" + yuyue_no + "' and peij_no='" + peij_no + "'"));
+        return jsons.json(1, 1, 1, "删除成功");
+    }
+
+    @At
+    @Ok("raw:json")
+    public String updateClSl(String yuyue_no, String peij_no, String sl) {
+        dao.execute(Sqls.create("update work_yuyue_ll set peij_sl=" + sl + ",peij_je=peij_dj*" + sl + ",peij_cbje=peij_cb*" + sl
+                + " where yuyue_no='" + yuyue_no + "' and peij_no='" + peij_no + "'"));
+        return "success";
+    }
+
+    @At
+    @Ok("raw:json")
+    public String updateClDj(String yuyue_no, String peij_no, String ydj) {
+        dao.execute(Sqls.create("update work_yuyue_ll set peij_dj=" + ydj + ",peij_je=peij_sl*" + ydj
+                + " where yuyue_no='" + yuyue_no + "' and peij_no='" + peij_no + "'"));
         return "success";
     }
 }

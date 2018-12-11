@@ -478,9 +478,8 @@ public class PaiGongModule {
 	@At
 	@Ok("raw:json")
 	public String editYl_mrkx(String work_no, String peij_no, double sl) {
-        Sql sql1 = Sqls
-                .create("update work_ll_gz set peij_sl=" + sl + ",peij_je=peij_dj*" + sl + ",peij_yje=peij_ydj*" + sl + " where work_no='" + work_no + "' and peij_no='" + peij_no + "'");
-        dao.execute(sql1);
+        dao.execute(Sqls.create("update work_ll_gz set peij_sl=" + sl + ",peij_je=peij_dj*" + sl + ",peij_yje=peij_ydj*" + sl + ",peij_cbje=peij_cb*" + sl
+                + " where work_no='" + work_no + "' and peij_no='" + peij_no + "'"));
 		return "success";
 	}
 

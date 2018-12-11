@@ -326,7 +326,7 @@ public class Work_pz_gzEntity {
     @Column
     private double xche_haocai_cb;
     @Column
-    private String xche_yjwgrq;
+    private Date xche_yjwgrq;
     @Column
     private double xche_cclc;
     @Column
@@ -1578,11 +1578,11 @@ public class Work_pz_gzEntity {
         return xche_haocai_cb;
     }
 
-    public void setXche_yjwgrq(String xche_yjwgrq) {
+    public void setXche_yjwgrq(Date xche_yjwgrq) {
         this.xche_yjwgrq = xche_yjwgrq;
     }
 
-    public String getXche_yjwgrq() {
+    public Date getXche_yjwgrq() {
         return xche_yjwgrq;
     }
 

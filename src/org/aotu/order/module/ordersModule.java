@@ -298,8 +298,7 @@ public class ordersModule {
         // 获取3天之后的日期
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.DATE, 3);
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        pz.setXche_yjwgrq(simpleDateFormat.format(calendar.getTime()));
+        pz.setXche_yjwgrq(calendar.getTime());
         pz.setXche_jsrq(Calendar.getInstance().getTime());
         pz.setXche_sfbz(feilvName);
         pz.setXche_sffl(feilv);

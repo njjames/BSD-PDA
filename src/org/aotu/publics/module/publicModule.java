@@ -1331,7 +1331,8 @@ public class publicModule {
                 count = dao.count(offerEntity.class, Cnd.where("che_no", "=", che_no).and("gongsino", "=", gongsino));
                 break;
             case "wxyy":
-                count = dao.count(Work_yuyue_pzEntity.class, Cnd.where("che_no", "=", che_no).and("gongsino", "=", gongsino));
+                count = dao.count(Work_yuyue_pzEntity.class, Cnd.where("che_no", "=", che_no).and("gongsino", "=", gongsino)
+                        .and("yuyue_state", "=", 0));
                 break;
             case "wxjd":
                 count = dao.count(Work_pz_gzEntity.class,
@@ -1387,7 +1388,7 @@ public class publicModule {
                 break;
             case "wxyy":
                 List<Work_yuyue_pzEntity> yuyuePzEntities = dao.query(Work_yuyue_pzEntity.class,
-                        Cnd.where("che_no", "=", che_no).and("gongsino", "=", gongsino).desc("yuyue_jlrq"));
+                        Cnd.where("che_no", "=", che_no).and("gongsino", "=", gongsino).and("yuyue_state", "=", 0).desc("yuyue_jlrq"));
                 for (Work_yuyue_pzEntity entity : yuyuePzEntities) {
                     HashMap<String, Object> map = new HashMap<>();
                     map.put("billNo", entity.getYuyue_no());
